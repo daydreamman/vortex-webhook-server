@@ -17,6 +17,6 @@ COPY . .
 # 曝露 Port 8080 (Cloud Run / App Engine 預設)
 EXPOSE 8080
 
-# 使用 Gunicorn 作為 Production Web 伺服器啟動 Flask App
-# Gunicorn 會將服務綁定到 0.0.0.0 和 Cloud Run 提供或預設的 8080 Port
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "main:app"]
+# 使用 Gunicorn 作為 Production Web 伺服器啟動 Flask App。
+# SSE /events 是長連線，必須使用 threaded worker，避免單一串流佔住整個服務。
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "8", "--timeout", "0", "main:app"]

@@ -176,9 +176,13 @@
       margin: 2rem auto;
       padding: 0 1.5rem;
       display: grid;
-      grid-template-columns: 450px 1fr;
+      grid-template-columns: minmax(360px, 450px) minmax(0, 1fr);
       gap: 2rem;
       flex-grow: 1;
+    }
+
+    .dashboard-container > * {
+      min-width: 0;
     }
 
     @media (max-width: 1100px) {
@@ -199,6 +203,8 @@
       flex-direction: column;
       transition: border 0.3s ease;
       max-height: 85vh;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .card-title-bar {
@@ -208,6 +214,8 @@
       margin-bottom: 1.25rem;
       border-bottom: 1px solid var(--panel-border);
       padding-bottom: 0.75rem;
+      gap: 1rem;
+      min-width: 0;
     }
 
     .card-title {
@@ -218,6 +226,7 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      min-width: 0;
     }
 
     .card-subtitle {
@@ -232,6 +241,7 @@
       flex-direction: column;
       gap: 0.85rem;
       flex-grow: 1;
+      min-height: 0;
       padding-right: 0.25rem;
     }
 
@@ -244,6 +254,8 @@
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      flex: 0 0 auto;
+      min-height: 82px;
       transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
@@ -289,6 +301,8 @@
       gap: 0.75rem;
       align-items: center;
       width: 100%;
+      min-width: 0;
+      min-height: 50px;
     }
 
     .event-card-thumb {
@@ -313,6 +327,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
     }
 
     .event-name-tag {
@@ -322,6 +338,11 @@
       border-radius: 6px;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     /* 依事件類型套用不同顏色 */
@@ -345,12 +366,17 @@
     .event-time {
       font-size: 0.75rem;
       color: var(--text-secondary);
+      flex: 0 0 auto;
+      text-align: right;
+      white-space: nowrap;
     }
 
     .event-body {
       display: flex;
       justify-content: space-between;
+      gap: 0.75rem;
       font-size: 0.85rem;
+      min-width: 0;
     }
 
     .device-name {
@@ -359,11 +385,16 @@
       display: flex;
       align-items: center;
       gap: 0.35rem;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .mac-address {
       color: var(--text-secondary);
       font-family: monospace;
+      flex: 0 0 auto;
     }
 
     .mock-badge {
@@ -403,12 +434,19 @@
       overflow-y: auto;
       flex-grow: 1;
       padding-right: 0.5rem;
+      min-width: 0;
+    }
+
+    .detail-container > * {
+      min-width: 0;
+      max-width: 100%;
     }
 
     .detail-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
+      min-width: 0;
     }
 
     @media (max-width: 650px) {
@@ -419,11 +457,12 @@
 
     .detail-row {
       display: grid;
-      grid-template-columns: 100px 1fr;
+      grid-template-columns: 100px minmax(0, 1fr);
       gap: 1rem;
       font-size: 0.9rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       padding-bottom: 0.5rem;
+      min-width: 0;
     }
 
     .detail-label {
@@ -445,10 +484,12 @@
     /* 警報圖片展示區 */
     .image-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
       margin-top: 0.5rem;
       margin-bottom: 0.5rem;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .image-card {
@@ -459,8 +500,11 @@
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
-      align-items: center;
+      align-items: stretch;
       transition: border-color 0.25s ease;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
     }
 
     .image-card:hover {
@@ -495,6 +539,52 @@
       transform: scale(1.02);
     }
 
+    .detail-image-link {
+      width: 100%;
+      max-width: 100%;
+      min-height: 0;
+      border-radius: 8px;
+      background: #000;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: zoom-in;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 0;
+      text-decoration: none;
+    }
+
+    .detail-image-link:hover {
+      border-color: var(--panel-hover-border);
+    }
+
+    .detail-image-plain {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      min-height: 1px;
+      display: block;
+      object-fit: contain;
+      background: #000;
+      border: 0;
+      border-radius: 8px;
+      max-height: 520px;
+      transform: none;
+    }
+
+    #detail-image-face-box,
+    #detail-image-person-box,
+    #detail-image-thumb-box {
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .detail-image-plain:hover {
+      transform: none;
+    }
+
     /* JSON 原始資料展示區 */
     .json-wrapper {
       background: rgba(15, 23, 42, 0.6);
@@ -507,8 +597,12 @@
       color: var(--accent-cyan);
       white-space: pre-wrap;
       word-wrap: break-word;
+      overflow-wrap: anywhere;
+      word-break: break-all;
       position: relative;
       max-height: 250px;
+      max-width: 100%;
+      min-width: 0;
       overflow-y: auto;
     }
 
@@ -526,7 +620,7 @@
     /* 狀態卡片 (頂部統計) */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
@@ -646,7 +740,7 @@
             <i data-lucide="alert-octagon" style="width: 1rem; height: 1rem;"></i>
             Token 驗證失敗 (X-Vortex-Token Mismatch)
           </div>
-          <div>伺服器預期設定為 <code>vortex_default_secure_token</code>，但收到的是：<code id="detail-debug-received-token" style="background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 4px; font-family: monospace;"></code></div>
+          <div>收到的 Token 是：<code id="detail-debug-received-token" style="background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 4px; font-family: monospace;"></code>，與 Cloud Run 目前設定的 <code>VORTEX_TOKEN</code> 不一致。</div>
           <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem;">請檢查 VORTEX Portal 中的自訂 Header 設定（Header 名稱應為 <code>X-Vortex-Token</code>）。</div>
         </div>
 
@@ -875,10 +969,11 @@
 
     // 渲染單一事件項目
     function createEventItemElement(evt) {
+      const eventKey = getEventKey(evt);
       const div = document.createElement('div');
-      div.className = `event-item ${selectedEventId === evt.event_id ? 'active' : ''}`;
-      div.setAttribute('id', `evt-item-${evt.event_id}`);
-      div.onclick = () => selectEvent(evt.event_id);
+      div.className = `event-item ${selectedEventId === eventKey ? 'active' : ''}`;
+      div.setAttribute('id', `evt-item-${eventKey}`);
+      div.onclick = () => selectEvent(eventKey);
 
       const tagClass = getTagClass(evt.event_name);
       const isMock = evt.is_mock ? '<span class="mock-badge">範例</span>' : '';
@@ -888,11 +983,8 @@
 
       // 處理 Base64 縮圖 (Thumbnail)
       let thumbImgHtml = '';
-      if (isValidImage(evt.thumbnail)) {
-        const cleanThumb = evt.thumbnail.replace(/\s/g, '');
-        const src = cleanThumb.startsWith('data:image') 
-          ? cleanThumb 
-          : `data:image/jpeg;base64,${cleanThumb}`;
+      const src = getImageSource(evt.thumbnail);
+      if (src) {
         thumbImgHtml = `<img class="event-card-thumb" src="${src}" alt="Thumb" />`;
       }
 
@@ -970,6 +1062,103 @@
       return true;
     }
 
+    // 清理 Vortex 傳入的圖片字串；裸 base64 會補上 JPEG data URL 前綴
+    function getEventKey(evt) {
+      return evt && (evt.internal_id || evt.event_id || '');
+    }
+
+    function getImageSource(imgStr) {
+      if (!isValidImage(imgStr)) return '';
+      const clean = imgStr.trim().replace(/\s/g, '');
+      if (clean.startsWith('http://') || clean.startsWith('https://')) {
+        return clean;
+      }
+      if (clean.startsWith('data:image')) {
+        return clean;
+      }
+      if (clean.startsWith('data:') && clean.includes(';base64,')) {
+        return `data:image/jpeg;base64,${clean.split(',', 2)[1] || ''}`;
+      }
+      return `data:image/jpeg;base64,${clean}`;
+    }
+
+    // data:image 在新分頁常被瀏覽器擋成 about:blank，改用頁面內預覽
+    function openImagePreview(src, alt) {
+      if (!src) return;
+
+      const existing = document.getElementById('image-preview-overlay');
+      if (existing) existing.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'image-preview-overlay';
+      overlay.style.cssText = 'position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.86); display: flex; align-items: center; justify-content: center; padding: 2rem; cursor: zoom-out;';
+      overlay.onclick = () => overlay.remove();
+
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = alt;
+      img.style.cssText = 'max-width: 96vw; max-height: 92vh; object-fit: contain; border-radius: 8px; background: #000;';
+      img.onclick = (event) => event.stopPropagation();
+
+      overlay.appendChild(img);
+      document.body.appendChild(overlay);
+    }
+
+    // 極簡圖片顯示：只用 <a><img></a>，避開原本 detail/card/canvas/background 包裝
+    function renderDetailImage(container, src, alt, fallbackSrc = '') {
+      container.replaceChildren();
+      if (!src) return;
+
+      const link = document.createElement('a');
+      link.className = 'detail-image-link';
+      link.href = src;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.onclick = (event) => {
+        event.preventDefault();
+        openImagePreview(link.href, alt);
+      };
+
+      const img = document.createElement('img');
+      img.className = 'detail-image-plain';
+      img.src = src;
+      img.alt = alt;
+      img.loading = 'eager';
+      img.decoding = 'sync';
+      img.style.cssText = 'display:block !important; width:100% !important; max-width:100% !important; height:auto !important; min-height:1px !important; max-height:520px !important; object-fit:contain !important; background:#000 !important; border:0 !important; border-radius:8px !important; opacity:1 !important; visibility:visible !important;';
+
+      if (fallbackSrc) {
+        img.onerror = () => {
+          img.onerror = null;
+          img.src = fallbackSrc;
+          link.href = fallbackSrc;
+        };
+      } else {
+        img.onerror = () => {
+          container.replaceChildren();
+          const errorText = document.createElement('div');
+          errorText.textContent = '圖片載入失敗';
+          errorText.style.cssText = 'height: 220px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); background: #000; border-radius: 8px; width: 100%;';
+          container.appendChild(errorText);
+        };
+      }
+
+      link.appendChild(img);
+      container.appendChild(link);
+    }
+
+    function renderDetailThumbnail(container, eventId, fallbackSrc) {
+      container.replaceChildren();
+
+      if (eventId) {
+        const normalizedSrc = `/thumbnail/${encodeURIComponent(eventId)}?v=${Date.now()}`;
+        renderDetailImage(container, normalizedSrc, '警報縮圖', fallbackSrc);
+        return;
+      }
+
+      renderDetailImage(container, fallbackSrc, '警報縮圖');
+    }
+
 
 
     // 選擇特定事件展示細節
@@ -986,7 +1175,7 @@
       }
 
       // 找出該筆事件資料
-      const evt = events.find(e => e.event_id === eventId);
+      const evt = events.find(e => getEventKey(e) === eventId);
       if (!evt) return;
 
       // 填入細節面板
@@ -1037,25 +1226,22 @@
 
       // 2. 確定容器顯示後，再注入圖片元素
       if (hasFace) {
-        detailImageFaceBox.innerHTML = `<img src="${evt.image_face}" alt="人臉截圖" onclick="window.open(this.src)" />`;
+        renderDetailImage(detailImageFaceBox, getImageSource(evt.image_face), '人臉截圖');
       } else {
-        detailImageFaceBox.innerHTML = '';
+        detailImageFaceBox.replaceChildren();
       }
 
       if (hasPerson) {
-        detailImagePersonBox.innerHTML = `<img src="${evt.image_person}" alt="全身截圖" onclick="window.open(this.src)" />`;
+        renderDetailImage(detailImagePersonBox, getImageSource(evt.image_person), '全身截圖');
       } else {
-        detailImagePersonBox.innerHTML = '';
+        detailImagePersonBox.replaceChildren();
       }
 
       if (hasThumb) {
-        const cleanThumb = evt.thumbnail.replace(/\s/g, '');
-        const thumbSrc = cleanThumb.startsWith('data:image')
-          ? cleanThumb
-          : `data:image/jpeg;base64,${cleanThumb}`;
-        detailImageThumbBox.innerHTML = `<img src="${thumbSrc}" alt="警報縮圖" onclick="window.open(this.src)" />`;
+        const embeddedThumbSrc = getImageSource(evt.thumbnail);
+        renderDetailThumbnail(detailImageThumbBox, getEventKey(evt), embeddedThumbSrc);
       } else {
-        detailImageThumbBox.innerHTML = '';
+        detailImageThumbBox.replaceChildren();
       }
 
       // 偵錯欄位顯示邏輯
@@ -1164,7 +1350,7 @@
         ];
         events = mockEvents;
         updateDashboard();
-        selectEvent(mockEvents[0].event_id);
+        selectEvent(getEventKey(mockEvents[0]));
       }
     }
 
@@ -1189,7 +1375,7 @@
           if (historyEvents && historyEvents.length > 0) {
             events = historyEvents;
             updateDashboard();
-            selectEvent(events[0].event_id);
+            selectEvent(getEventKey(events[0]));
           } else {
             injectMockDataIfEmpty();
           }
@@ -1218,7 +1404,7 @@
           updateDashboard();
           
           // 自動選擇最新進來的事件
-          selectEvent(newEvent.event_id);
+          selectEvent(getEventKey(newEvent));
 
         } catch (err) {
           console.error("解析即時事件失敗", err);
