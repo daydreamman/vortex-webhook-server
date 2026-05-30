@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, make_response, stream_with_context
 import os
 import logging
 import queue
 import json
+import uuid
 
 app = Flask(__name__)
 
@@ -17,6 +18,10 @@ logging.basicConfig(
 
 # 讀取認證 Token，若未設定環境變數則使用預設值（建議在 GCP Cloud Run 中透過環境變數設定此金鑰）
 VORTEX_VERIFICATION_TOKEN = os.getenv("VORTEX_TOKEN", "vortex_default_secure_token")
+FALLBACK_VORTEX_TOKEN = os.getenv("FALLBACK_VORTEX_TOKEN", "")
+ACCEPTED_VORTEX_TOKENS = {
+    token for token in [VORTEX_VERIFICATION_TOKEN, FALLBACK_VORTEX_TOKEN] if token
+}
 
 # 全域變數：儲存最近 50 筆 Webhook 事件（新事件在最前面）
 EVENT_HISTORY = []
@@ -49,7 +54,7 @@ def handle_vortex_webhook():
     client_token = request.headers.get('X-Vortex-Token')
     
     # 驗證 Token 是否合法
-    token_valid = (client_token == VORTEX_VERIFICATION_TOKEN)
+    token_valid = client_token in ACCEPTED_VORTEX_TOKENS
     
     # 2. 嘗試解析 JSON
     is_json = True
@@ -111,6 +116,7 @@ def handle_vortex_webhook():
     mac = payload.get("mac") or payload.get("macAddress") or "Unknown MAC"
 
     event_data = {
+        "internal_id": uuid.uuid4().hex,
         "event_id": event_id,
         "org_name": payload.get("organizationName") or payload.get("organization_name") or payload.get("org_name") or "N/A",
         "org_id": payload.get("organizationId") or payload.get("org_id") or "",
@@ -156,7 +162,7 @@ def handle_vortex_webhook():
         return jsonify({
             "status": "warning",
             "message": "Webhook received but verification token failed. Please check X-Vortex-Token header.",
-            "expected_token": VORTEX_VERIFICATION_TOKEN,
+            "expected_token": "configured VORTEX_TOKEN",
             "received_token": client_token or "None"
         }), 200
 
@@ -169,16 +175,19 @@ def stream_events():
         # 為當前連接的前端建立一個專屬 Queue
         client_queue = queue.Queue()
         SUBSCRIBERS.append(client_queue)
+
+        # 先送一個註解，讓代理與瀏覽器立即建立串流，不等第一筆警報才 flush。
+        yield ": connected\n\n"
         
         # 連接建立時，先將當前已有的歷史事件發送給前端
-        yield f"event: history\ndata: {json.dumps(EVENT_HISTORY)}\n\n"
+        yield f"event: history\ndata: {json.dumps(EVENT_HISTORY, ensure_ascii=False)}\n\n"
         
         try:
             while True:
                 try:
                     # 從 Queue 中獲取最新事件，阻塞 15 秒以實現長輪詢
                     event_data = client_queue.get(timeout=15)
-                    yield f"event: message\ndata: {json.dumps(event_data)}\n\n"
+                    yield f"event: message\ndata: {json.dumps(event_data, ensure_ascii=False)}\n\n"
                 except queue.Empty:
                     # 發送 Keep-Alive 註釋，避免 Cloud Run / nginx 逾時斷開
                     yield ": keep-alive\n\n"
@@ -189,26 +198,62 @@ def stream_events():
             if client_queue in SUBSCRIBERS:
                 SUBSCRIBERS.remove(client_queue)
                 
-    return app.response_class(event_generator(), mimetype='text/event-stream')
+    response = app.response_class(
+        stream_with_context(event_generator()),
+        mimetype='text/event-stream'
+    )
+    response.headers["Cache-Control"] = "no-cache, no-transform"
+    response.headers["X-Accel-Buffering"] = "no"
+    return response
 
 @app.route('/thumbnail/<event_id>')
 def serve_thumbnail(event_id):
-    """將事件中的 Base64 縮圖解碼後，以真實 JPEG 圖片格式回傳"""
+    """將事件中的 Base64 縮圖解碼並重新編碼成瀏覽器穩定顯示的 JPEG"""
     import base64
+    import io
     from flask import Response
 
     for evt in EVENT_HISTORY:
-        if evt.get("event_id") == event_id and evt.get("thumbnail"):
+        if (
+            (evt.get("internal_id") == event_id or evt.get("event_id") == event_id)
+            and evt.get("thumbnail")
+        ):
             try:
-                raw_b64 = evt["thumbnail"].strip()
+                raw_b64 = str(evt["thumbnail"]).strip()
                 # 移除 data:image 前綴 (如果有)
                 if raw_b64.startswith("data:"):
                     raw_b64 = raw_b64.split(",", 1)[1]
-                # 清除空白換行
-                raw_b64 = raw_b64.replace("\n", "").replace("\r", "").replace(" ", "")
-                img_bytes = base64.b64decode(raw_b64)
-                return Response(img_bytes, mimetype='image/jpeg',
-                                headers={'Cache-Control': 'public, max-age=3600'})
+                raw_b64 = "".join(raw_b64.split())
+                missing_padding = len(raw_b64) % 4
+                if missing_padding:
+                    raw_b64 += "=" * (4 - missing_padding)
+
+                img_bytes = base64.b64decode(raw_b64, validate=False)
+
+                try:
+                    from PIL import Image, ImageOps
+
+                    image = Image.open(io.BytesIO(img_bytes))
+                    image = ImageOps.exif_transpose(image)
+                    if image.mode not in ("RGB", "L"):
+                        image = image.convert("RGB")
+
+                    output = io.BytesIO()
+                    image.save(output, format="JPEG", quality=90, optimize=True)
+                    return Response(
+                        output.getvalue(),
+                        mimetype='image/jpeg',
+                        headers={'Cache-Control': 'no-store, max-age=0'}
+                    )
+                except Exception as normalize_error:
+                    logging.warning(
+                        f"縮圖重新編碼失敗，改回傳原始圖片 event_id={event_id}: {normalize_error}"
+                    )
+                    return Response(
+                        img_bytes,
+                        mimetype='image/jpeg',
+                        headers={'Cache-Control': 'no-store, max-age=0'}
+                    )
             except Exception as e:
                 logging.error(f"縮圖解碼失敗 event_id={event_id}: {e}")
                 return Response("Decode error", status=500)
@@ -218,10 +263,12 @@ def serve_thumbnail(event_id):
 @app.route('/', methods=['GET'])
 def index():
     # 渲染儀表板網頁
-    return render_template('index.html')
+    response = make_response(render_template('index.html'))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 if __name__ == '__main__':
     # 本地測試時執行
     app.run(host='0.0.0.0', port=8080, debug=True)
-
-
