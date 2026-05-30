@@ -1,0 +1,23 @@
+# OpenSpec Project Configuration
+project:
+  name: "VIVOTEK Vortex Webhook Server & Dashboard"
+  description: "A serverless webhook receiver on Cloud Run paired with a real-time glassmorphism dashboard."
+  
+  tech_stack:
+    backend:
+      language: "Python 3.9"
+      framework: "Flask 3.0.0"
+      web_server: "Gunicorn 21.2.0"
+      deployment: "Google Cloud Run (Serverless)"
+    frontend:
+      language: "JavaScript (ES6 Vanilla)"
+      framework: "None"
+      styling: "Vanilla CSS"
+      icons: "Lucide Icons (CDN)"
+      communications: "Server-Sent Events (SSE)"
+
+  conventions:
+    api_style: "REST Webhook (POST) + SSE stream (GET)"
+    token_auth: "X-Vortex-Token custom header check"
+    image_rendering: "CSS background-image on fixed 180px wrapper divs to prevent layout collapse in flex containers"
+    whitespace_cleaning: "Remove all newlines and spaces from base64 strings before rendering"
