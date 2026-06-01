@@ -11,18 +11,28 @@ The VIVOTEK Vortex Webhook Server & Dashboard receives alarm webhooks from VORTE
 * **GCP Project**: `webhook-479112`
 * **Region**: `asia-east1`
 * **Service**: `vortex-webhook-server`
-* **Latest deployed revision**: `vortex-webhook-server-00034-lbq`
+* **Latest deployed revision**: `vortex-webhook-server-00038-4ws`
 * **Traffic**: 100% to latest revision
 * **Service URL**: `https://vortex-webhook-server-flraxb4fsq-de.a.run.app`
 * **Alternate run.app URL used during testing**: `https://vortex-webhook-server-933678246560.asia-east1.run.app`
 * **Container image**: built by Cloud Run source deploy into Artifact Registry
 * **Runtime command**: Gunicorn with one worker and eight threads
+* **Cost-control settings**:
+  * Minimum instances: `0`
+  * Maximum instances: `1`
+  * Memory limit: `256Mi`
+  * CPU limit: `1`
+  * CPU throttling: enabled
+  * Startup CPU boost: disabled
+  * Container concurrency: `80`
 
 ```bash
 gunicorn --bind 0.0.0.0:8080 --workers 1 --threads 8 --timeout 0 main:app
 ```
 
 The threaded Gunicorn configuration is required because `/events` is a long-lived SSE connection. A single sync worker can be occupied by one stream and block other requests.
+
+The cost-control settings keep the service able to scale to zero when idle, prevent multiple instances from being created during bursts, and reduce memory allocation cost. Any future Cloud Run deploy must preserve these settings unless the operating requirement changes.
 
 ---
 
@@ -87,7 +97,7 @@ Required behavior:
   * `Cache-Control: no-cache, no-transform`
   * `X-Accel-Buffering: no`
 
-The event history is in memory and keeps up to 50 events. Deploying a new Cloud Run revision resets this history.
+The event history is in memory and has no application-level event count limit. Deploying a new Cloud Run revision or restarting the instance resets this history. Because events are kept in memory, high-volume deployments should be monitored for memory growth.
 
 ### `GET /thumbnail/<event_id>`
 
@@ -123,6 +133,38 @@ Serves the dashboard and disables HTML caching:
 
 ## Frontend Specifications
 
+### Branding
+
+The dashboard header uses the VORTEX logo from the official VORTEX website.
+
+Required behavior:
+
+* The logo asset is stored locally at `static/images/vortex-logo.svg`.
+* The header renders it through Flask static routing:
+
+```html
+<img class="brand-logo" src="{{ url_for('static', filename='images/vortex-logo.svg') }}" alt="VORTEX">
+```
+
+* The logo links to `https://www.vortexcloud.com/tc`.
+* Because the official SVG contains dark lettering, it must sit on a light rounded background in the dark dashboard header.
+* The adjacent page title is `Webhook Live Monitor` to avoid duplicating the VORTEX wordmark.
+
+### Visual Style
+
+The dashboard uses a light, clean visual style inspired by VORTEX/AI search review pages.
+
+Required behavior:
+
+* Overall background is light neutral (`#fafafa`) rather than a dark gradient.
+* Header is a white sticky bar with a subtle bottom border.
+* Panels are white cards with thin neutral borders, soft shadow, and rounded corners.
+* Event cards use light borders, small shadows, rounded image thumbnails, and a restrained active state.
+* Status badges and event tags use pill styling with neutral colors unless communicating connection or warning state.
+* JSON/debug blocks use light gray surfaces and dark readable text.
+* The existing left alarm stream and right alarm detail two-column structure remains intact.
+* This style is deployed in revision `vortex-webhook-server-00038-4ws`.
+
 ### Real-Time Connection
 
 * Uses native `EventSource('/events')`.
@@ -130,7 +172,7 @@ Serves the dashboard and disables HTML caching:
 * Shows disconnected state and retries after 5 seconds when SSE fails.
 * Loads `history` into the dashboard.
 * Prepends each live `message` event.
-* Keeps at most 50 client-side events.
+* Does not apply a client-side event count limit.
 * Automatically selects the newest real event.
 
 ### Event Identity
@@ -193,7 +235,7 @@ Required CSS:
 * `.event-card-inner { min-height: 50px; min-width: 0; }`
 * Long labels, timestamps, device names, and MAC fields must not collapse the card height.
 
-This fixes the issue where 50 events caused cards to compress vertically and clip thumbnails/text.
+This keeps cards from compressing vertically and clipping thumbnails/text when many events are present.
 
 ### Token Warning Display
 
@@ -221,8 +263,12 @@ Pillow is required for thumbnail normalization.
 ## Validation Performed
 
 * `python3 -m py_compile main.py`
+* Local Flask run with `.venv/bin/python main.py`
+* Local browser verification of `http://127.0.0.1:8080/`
 * `git diff --check`
 * Cloud Run deployed and verified at the live service URL.
+* Live asset check for `/static/images/vortex-logo.svg` returned HTTP `200` and `Content-Type: image/svg+xml`.
+* Live browser verification confirmed the header logo loads with nonzero natural dimensions.
 * Live SSE confirmed to return `: connected` and history/message events.
 * Live dashboard verified:
   * status shows `即時連線中`
@@ -237,8 +283,16 @@ Pillow is required for thumbnail normalization.
 Changes were merged through:
 
 * PR: `https://github.com/daydreamman/vortex-webhook-server/pull/1`
+* PR: `https://github.com/daydreamman/vortex-webhook-server/pull/2`
 * Base branch: `main`
-* Feature branch: `codex/fix-live-thumbnail-rendering`
-* Merge commit: `a4e325c`
+* Earlier feature branch: `codex/fix-live-thumbnail-rendering`
+* Earlier merge commit: `a4e325c`
+
+Current unmerged local changes after PR #2:
+
+* Header branding update: official VORTEX logo stored at `static/images/vortex-logo.svg`.
+* Light visual style update inspired by VORTEX/AI search review pages.
+* Removal of the application-level event count limit.
+* Cloud Run deployment with the branding, style, and event-history updates: revision `vortex-webhook-server-00038-4ws`.
 
 The repository default branch is `main`, not `master`.

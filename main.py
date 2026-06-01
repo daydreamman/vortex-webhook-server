@@ -23,17 +23,15 @@ ACCEPTED_VORTEX_TOKENS = {
     token for token in [VORTEX_VERIFICATION_TOKEN, FALLBACK_VORTEX_TOKEN] if token
 }
 
-# 全域變數：儲存最近 50 筆 Webhook 事件（新事件在最前面）
+# 全域變數：儲存所有 Webhook 事件（新事件在最前面）
 EVENT_HISTORY = []
 # 全域變數：所有連接中前端用戶的訊息 Queue 列表
 SUBSCRIBERS = []
 
 def broadcast_event(event_data):
     """將新事件存入歷史並廣播給所有連線中的前端"""
-    # 存入歷史（最多保留 50 筆）
+    # 存入歷史，不在應用層限制事件數量。
     EVENT_HISTORY.insert(0, event_data)
-    if len(EVENT_HISTORY) > 50:
-        EVENT_HISTORY.pop()
         
     # 廣播給所有 active 的 SSE 連線
     for sub_queue in list(SUBSCRIBERS):
