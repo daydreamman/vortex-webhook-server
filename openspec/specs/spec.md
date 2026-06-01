@@ -11,7 +11,7 @@ The VIVOTEK Vortex Webhook Server & Dashboard receives alarm webhooks from VORTE
 * **GCP Project**: `webhook-479112`
 * **Region**: `asia-east1`
 * **Service**: `vortex-webhook-server`
-* **Latest deployed revision**: `vortex-webhook-server-00047-wp5`
+* **Latest deployed revision**: `vortex-webhook-server-00049-2fx`
 * **Traffic**: 100% to latest revision
 * **Service URL**: `https://vortex-webhook-server-flraxb4fsq-de.a.run.app`
 * **Alternate run.app URL used during testing**: `https://vortex-webhook-server-933678246560.asia-east1.run.app`
@@ -215,7 +215,35 @@ Required behavior:
 * Status badges and event tags use pill styling with neutral colors unless communicating connection or warning state.
 * JSON/debug blocks use light gray surfaces and dark readable text.
 * The existing left alarm stream and right alarm detail two-column structure remains intact.
-* This style is deployed in revision `vortex-webhook-server-00047-wp5`.
+* This style is deployed in revision `vortex-webhook-server-00049-2fx`.
+
+### Mobile Header Layout
+
+At phone-sized widths, the dashboard header must avoid overlapping the brand area, connection badge, webhook URL control, and token setting control.
+
+Required behavior:
+
+* At `max-width: 720px`, the header stacks vertically.
+* The logo/title area occupies its own row.
+* The Live/connection badge, webhook URL control, and `X-Vortex-Token` control are laid out as separate rows.
+* The webhook URL and token inputs are the only elements that shrink horizontally.
+* The copy, `?`, and `Save` buttons remain visible and keep fixed touch-friendly dimensions.
+* Copy/save status text may be hidden on phone-sized widths to preserve the control layout.
+
+### Responsive Alarm Details
+
+When the viewport is narrow enough that the dashboard can only comfortably show the alarm stream column, the right-side alarm detail panel is hidden.
+
+Required behavior:
+
+* At `max-width: 1100px`, the dashboard becomes a single-column alarm stream view.
+* The standalone right-side `Alarm Details` card is hidden in this single-column mode.
+* Clicking an alarm event card in single-column mode expands the selected event details directly below that event card.
+* Clicking the same event card again collapses the inline details and returns the card to its compact state.
+* Clicking a different event card moves the same detail/debug DOM content under the newly selected card.
+* The inline detail section includes the same image, parsed field, raw payload, and debug information shown in the desktop right-side panel.
+* Live/history events are not automatically expanded in single-column mode; details appear only after the user clicks an event card.
+* Desktop mode keeps the two-column layout and automatically selects the newest real event.
 
 ### Language
 
