@@ -11,10 +11,12 @@ The VIVOTEK Vortex Webhook Server & Dashboard receives alarm webhooks from VORTE
 * **GCP Project**: `webhook-479112`
 * **Region**: `asia-east1`
 * **Service**: `vortex-webhook-server`
-* **Latest deployed revision**: `vortex-webhook-server-00038-4ws`
+* **Latest deployed revision**: `vortex-webhook-server-00047-wp5`
 * **Traffic**: 100% to latest revision
 * **Service URL**: `https://vortex-webhook-server-flraxb4fsq-de.a.run.app`
 * **Alternate run.app URL used during testing**: `https://vortex-webhook-server-933678246560.asia-east1.run.app`
+* **Custom domain**: `https://webhook.vivotek.tools`
+* **Customer webhook URL**: `https://webhook.vivotek.tools/webhook`
 * **Container image**: built by Cloud Run source deploy into Artifact Registry
 * **Runtime command**: Gunicorn with one worker and eight threads
 * **Cost-control settings**:
@@ -43,9 +45,12 @@ The cost-control settings keep the service able to scale to zero when idle, prev
 Receives VORTEX webhook events.
 
 * Reads `X-Vortex-Token`.
-* Validates the token against `VORTEX_TOKEN`.
-* Optionally accepts `FALLBACK_VORTEX_TOKEN` when configured.
-* Invalid tokens do not block ingestion. The event is still broadcast with `debug_token_valid = false` so the dashboard can display a warning.
+* Validates the token against the set of registered `X-Vortex-Token` values.
+* The default token is `9ea784d08b87d3a3f0f44114236592218ed8beb6eb8d411f`, unless `VORTEX_TOKEN` is set in the environment.
+* Invalid tokens are rejected with HTTP `401`.
+* Rejected events are not parsed into dashboard events, not stored in event history, and not broadcast over SSE.
+* Accepted events are stored in an in-memory history partition keyed by the received `X-Vortex-Token`.
+* Accepted events are broadcast only to dashboard clients subscribed with the same token.
 * Parses JSON payloads from normal JSON requests, with raw-body JSON fallback.
 * Generates a unique `internal_id` for each received webhook event using `uuid.uuid4().hex`.
 
@@ -80,6 +85,37 @@ Timestamp display priority:
 4. `localTime`
 5. server current UTC time
 
+### `GET /settings/token`
+
+Returns the default `X-Vortex-Token` value used when a browser has no saved local token.
+
+Response shape:
+
+```json
+{
+  "x_vortex_token": "..."
+}
+```
+
+### `POST /settings/token`
+
+Registers a dashboard-scoped `X-Vortex-Token` value.
+
+Required request shape:
+
+```json
+{
+  "x_vortex_token": "..."
+}
+```
+
+Required behavior:
+
+* Rejects an empty token with HTTP `400`.
+* Registers the token in process memory so `POST /webhook` can accept events with that token.
+* Does not make the token global for other dashboard clients.
+* Does not persist across Cloud Run instance restart or new revision deployment unless the same value is also configured as `VORTEX_TOKEN`.
+
 ### `GET /events`
 
 Streams real-time events to the dashboard via Server-Sent Events.
@@ -87,8 +123,10 @@ Streams real-time events to the dashboard via Server-Sent Events.
 Required behavior:
 
 * Immediately sends `: connected` to flush the stream.
-* Sends a `history` event with the current in-memory event history.
-* Sends a `message` event for each new webhook.
+* Reads the subscriber token from `/events?token=<X-Vortex-Token>`.
+* Sends a `history` event with the current in-memory event history for that token.
+* Sends a `message` event only for new webhooks received with the same token.
+* Sends a `clear` event only when the server-side event history for the same token is cleared from the dashboard.
 * Sends `: keep-alive` every 15 seconds of silence.
 * Uses `json.dumps(..., ensure_ascii=False)`.
 * Uses `stream_with_context`.
@@ -97,7 +135,19 @@ Required behavior:
   * `Cache-Control: no-cache, no-transform`
   * `X-Accel-Buffering: no`
 
-The event history is in memory and has no application-level event count limit. Deploying a new Cloud Run revision or restarting the instance resets this history. Because events are kept in memory, high-volume deployments should be monitored for memory growth.
+The event history is partitioned by `X-Vortex-Token`, kept in memory, and has no application-level event count limit. Deploying a new Cloud Run revision or restarting the instance resets this history. Because events are kept in memory, high-volume deployments should be monitored for memory growth.
+
+### `POST /events/clear`
+
+Clears all stored dashboard events.
+
+Required behavior:
+
+* Reads `x_vortex_token` from the JSON request body.
+* Clears only the event history for that token.
+* Broadcasts an SSE `clear` event only to connected dashboard clients subscribed to that token.
+* Returns HTTP `200` with a success JSON response.
+* Does not clear other token partitions.
 
 ### `GET /thumbnail/<event_id>`
 
@@ -160,20 +210,68 @@ Required behavior:
 * Header is a white sticky bar with a subtle bottom border.
 * Panels are white cards with thin neutral borders, soft shadow, and rounded corners.
 * Event cards use light borders, small shadows, rounded image thumbnails, and a restrained active state.
+* Summary metric cards use equal heights, fixed title space, and aligned value baselines.
+* Latest activity uses a compact numeric `HH:MM:SS` style instead of locale-specific AM/PM text.
 * Status badges and event tags use pill styling with neutral colors unless communicating connection or warning state.
 * JSON/debug blocks use light gray surfaces and dark readable text.
 * The existing left alarm stream and right alarm detail two-column structure remains intact.
-* This style is deployed in revision `vortex-webhook-server-00038-4ws`.
+* This style is deployed in revision `vortex-webhook-server-00047-wp5`.
+
+### Language
+
+All dashboard UI text, user-facing messages, help content, empty states, debug labels, and backend response/log messages must be in English.
+
+### Customer Webhook URL Display
+
+The dashboard header shows the customer webhook URL so visitors know what to configure in VORTEX Portal.
+
+Required behavior:
+
+* Display `https://webhook.vivotek.tools/webhook` as the customer webhook URL.
+* Provide a copy button beside the URL.
+* If clipboard writing is blocked by the browser, select the URL text and show `URL selected`.
+* The token setup help dialog must also instruct users to set the VORTEX webhook URL to `https://webhook.vivotek.tools/webhook`.
+* The empty state must mention the same URL and the required `X-Vortex-Token` header.
 
 ### Real-Time Connection
 
-* Uses native `EventSource('/events')`.
-* Shows `即時連線中` when connected.
+* Uses native `EventSource('/events?token=<X-Vortex-Token>')`.
+* Shows `Live` when connected.
 * Shows disconnected state and retries after 5 seconds when SSE fails.
-* Loads `history` into the dashboard.
-* Prepends each live `message` event.
+* Loads token-scoped `history` into the dashboard.
+* Prepends each live token-scoped `message` event.
+* Handles token-scoped `clear` events by clearing the client event list and resetting the detail panel.
 * Does not apply a client-side event count limit.
 * Automatically selects the newest real event.
+* When the saved token changes, reconnects SSE with the new token and reloads only that token's event history.
+
+### Alarm Stream Controls
+
+The Alarm Stream title bar includes a `Clear` button with a trash icon and visible `Clear` text.
+
+Required behavior:
+
+* Calls `POST /events/clear` with the current browser token.
+* Clears the local event list and resets statistics/detail state after success.
+* Connected dashboard clients with the same token also clear when they receive the SSE `clear` event.
+* Connected dashboard clients using other tokens must not clear.
+
+### X-Vortex-Token Setting UI
+
+The dashboard header includes runtime webhook token controls.
+
+Required behavior:
+
+* Displays an editable `X-Vortex-Token` input.
+* Loads the saved browser token from `localStorage`; when no browser token exists, loads the default value from `GET /settings/token`.
+* Defaults to `9ea784d08b87d3a3f0f44114236592218ed8beb6eb8d411f`.
+* Saves changes to `localStorage` and registers the token through `POST /settings/token`.
+* Shows save status next to the setting.
+* Provides a `?` help button.
+* The help dialog explains that VORTEX webhook settings must add a custom header named `X-Vortex-Token` with the saved token value.
+* After saving, this browser sees only webhook events whose `X-Vortex-Token` header equals the saved value.
+* The token setting row must keep the `?` and `Save` buttons visible without text wrapping; the token input is the element that shrinks when horizontal space is tight.
+* Two dashboard clients using different tokens must not see each other's events.
 
 ### Event Identity
 
@@ -237,14 +335,9 @@ Required CSS:
 
 This keeps cards from compressing vertically and clipping thumbnails/text when many events are present.
 
-### Token Warning Display
+### Rejected Token Behavior
 
-If `debug_token_valid === false`, the selected event detail panel shows:
-
-* Token mismatch warning.
-* Received token value.
-* Explanation that it differs from the currently configured Cloud Run `VORTEX_TOKEN`.
-* Reminder that VORTEX Portal must send the custom header name `X-Vortex-Token`.
+Events with an `X-Vortex-Token` header that is not registered are rejected by the backend and do not appear in the dashboard. Events with a registered token appear only in dashboard clients subscribed to that same token.
 
 ---
 
@@ -269,9 +362,14 @@ Pillow is required for thumbnail normalization.
 * Cloud Run deployed and verified at the live service URL.
 * Live asset check for `/static/images/vortex-logo.svg` returned HTTP `200` and `Content-Type: image/svg+xml`.
 * Live browser verification confirmed the header logo loads with nonzero natural dimensions.
+* Live token settings API confirmed the default `X-Vortex-Token` value.
+* Live webhook token filtering confirmed:
+  * wrong `X-Vortex-Token` returns HTTP `401`
+  * matching `X-Vortex-Token` returns HTTP `200`
+* Live browser verification confirmed the token input, save button, and `?` help button are present.
 * Live SSE confirmed to return `: connected` and history/message events.
 * Live dashboard verified:
-  * status shows `即時連線中`
+  * status shows `Live`
   * right-side thumbnail loads with nonzero natural dimensions
   * right-side panel no longer expands to abnormal width
   * left-side event cards remain full height and scroll normally
@@ -284,15 +382,24 @@ Changes were merged through:
 
 * PR: `https://github.com/daydreamman/vortex-webhook-server/pull/1`
 * PR: `https://github.com/daydreamman/vortex-webhook-server/pull/2`
+* PR: `https://github.com/daydreamman/vortex-webhook-server/pull/3`
 * Base branch: `main`
 * Earlier feature branch: `codex/fix-live-thumbnail-rendering`
 * Earlier merge commit: `a4e325c`
 
-Current unmerged local changes after PR #2:
+Current unmerged local changes after PR #3:
 
-* Header branding update: official VORTEX logo stored at `static/images/vortex-logo.svg`.
-* Light visual style update inspired by VORTEX/AI search review pages.
-* Removal of the application-level event count limit.
-* Cloud Run deployment with the branding, style, and event-history updates: revision `vortex-webhook-server-00038-4ws`.
+* Runtime `X-Vortex-Token` setting UI and help dialog.
+* `/settings/token` API for reading/updating the webhook token.
+* Hard rejection of webhook events whose `X-Vortex-Token` does not equal the runtime setting.
+* Token setting row layout fix so `?` and `Save` buttons remain visible in narrow headers.
+* English-only UI and user-facing messages.
+* Customer webhook URL display and copy action.
+* Clipboard fallback for the webhook URL copy action.
+* Clear events button and `/events/clear` endpoint.
+* Token-scoped event history, SSE delivery, and clear behavior for multi-user isolation.
+* Visible `Clear` text on the Alarm Stream clear button.
+* Summary metric card alignment refinement.
+* Cloud Run deployment with token setting/filtering, layout, language, webhook URL, clear-event, token isolation, and summary card updates: revision `vortex-webhook-server-00047-wp5`.
 
 The repository default branch is `main`, not `master`.
