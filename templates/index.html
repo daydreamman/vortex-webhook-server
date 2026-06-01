@@ -304,6 +304,10 @@
       border-color: rgba(99, 102, 241, 0.5);
     }
 
+    .event-item.expanded {
+      overflow: visible;
+    }
+
     .event-card-inner {
       display: flex;
       gap: 0.75rem;
@@ -311,6 +315,10 @@
       width: 100%;
       min-width: 0;
       min-height: 50px;
+    }
+
+    .event-inline-detail {
+      display: none;
     }
 
     .event-card-thumb {
@@ -987,17 +995,84 @@
       .card-panel {
         max-height: none;
       }
+
+      .detail-panel-card {
+        display: none;
+      }
+
+      .event-item.expanded .event-inline-detail {
+        display: block;
+        border-top: 1px solid #ededed;
+        margin-top: 0.85rem;
+        padding-top: 0.85rem;
+      }
+
+      .event-inline-detail .detail-container {
+        display: flex;
+        overflow: visible;
+        padding-right: 0;
+      }
+
+      .event-inline-detail .image-grid,
+      .event-inline-detail .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .event-inline-detail .json-wrapper {
+        max-height: 14rem;
+      }
+    }
+
+    @media (min-width: 1101px) {
+      .event-inline-detail {
+        display: none !important;
+      }
     }
 
     @media (max-width: 720px) {
       header {
+        flex-direction: column;
         align-items: flex-start;
-        padding: 0.9rem 1rem;
+        gap: 0.75rem;
+        padding: 0.85rem 1rem;
+      }
+
+      .header-logo-section {
+        width: 100%;
+        align-items: center;
+      }
+
+      .header-logo-section > div {
+        min-width: 0;
+      }
+
+      .brand-logo {
+        width: clamp(6.75rem, 34vw, 8rem);
+      }
+
+      h1 {
+        font-size: 0.95rem;
+        line-height: 1.15;
+      }
+
+      .card-subtitle {
+        font-size: 0.7rem;
+        line-height: 1.2;
       }
 
       .header-status-section {
+        width: 100%;
         align-self: stretch;
-        justify-content: flex-start;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        justify-content: stretch;
+        gap: 0.5rem;
+      }
+
+      .header-status-section .status-badge {
+        order: -1;
+        justify-self: flex-start;
+        align-self: center;
       }
 
       .dashboard-container {
@@ -1215,6 +1290,44 @@
         width: auto;
       }
     }
+
+    @media (max-width: 720px) {
+      .webhook-endpoint,
+      .token-settings {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        border-radius: 16px;
+      }
+
+      .webhook-endpoint-label,
+      .token-settings label {
+        font-size: 0.74rem;
+      }
+
+      .webhook-endpoint code,
+      .token-settings input {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 0.72rem;
+        padding: 0.38rem 0.55rem;
+      }
+
+      .webhook-copy-status,
+      .token-status {
+        display: none;
+      }
+
+      .icon-button {
+        width: 1.95rem;
+        height: 1.95rem;
+      }
+
+      #token-save-button {
+        min-width: 3rem;
+        padding: 0 0.6rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1317,7 +1430,7 @@
     </div>
 
     <!-- Right panel: selected event details and raw JSON -->
-    <div class="card-panel">
+    <div id="detail-panel-card" class="card-panel detail-panel-card">
       <div class="card-title-bar">
         <div class="card-title">
           <i data-lucide="scan-eye"></i>
@@ -1325,6 +1438,7 @@
         </div>
       </div>
 
+      <div id="detail-panel-home"></div>
       <div id="detail-panel-body" class="detail-container" style="display: none;">
         
         <!-- Token validation warning -->
@@ -1504,6 +1618,8 @@
     const statCameras = document.getElementById('stat-cameras');
     const statLatestTime = document.getElementById('stat-latest-time');
 
+    const detailPanelCard = document.getElementById('detail-panel-card');
+    const detailPanelHome = document.getElementById('detail-panel-home');
     const detailPanelBody = document.getElementById('detail-panel-body');
     const detailEmptyState = document.getElementById('detail-empty-state');
     
@@ -1695,6 +1811,7 @@
     function clearDashboardEvents() {
       events = [];
       selectedEventId = null;
+      moveDetailPanelToHome();
       updateDashboard();
       detailPanelBody.style.display = 'none';
       detailEmptyState.style.display = 'flex';
@@ -1721,6 +1838,64 @@
     }
 
     clearEventsButton.addEventListener('click', clearEvents);
+
+    const inlineDetailMedia = window.matchMedia('(max-width: 1100px)');
+
+    function isInlineDetailMode() {
+      return inlineDetailMedia.matches;
+    }
+
+    function moveDetailPanelToHome() {
+      if (detailPanelBody.parentElement !== detailPanelCard) {
+        detailPanelHome.after(detailPanelBody);
+      }
+    }
+
+    function moveDetailPanelToEvent(eventId) {
+      const inlineDetail = document.getElementById(`inline-detail-${eventId}`);
+      if (!inlineDetail) return false;
+      inlineDetail.appendChild(detailPanelBody);
+      return true;
+    }
+
+    function resetEventSelectionClasses() {
+      document.querySelectorAll('.event-item').forEach(el => {
+        el.classList.remove('active', 'expanded');
+      });
+    }
+
+    function collapseInlineDetail() {
+      selectedEventId = null;
+      resetEventSelectionClasses();
+      detailPanelBody.style.display = 'none';
+      moveDetailPanelToHome();
+    }
+
+    function syncDetailPlacementAfterRender() {
+      resetEventSelectionClasses();
+
+      if (!selectedEventId || detailPanelBody.style.display === 'none') {
+        moveDetailPanelToHome();
+        return;
+      }
+
+      const activeEl = document.getElementById(`evt-item-${selectedEventId}`);
+      if (!activeEl) {
+        selectedEventId = null;
+        detailPanelBody.style.display = 'none';
+        moveDetailPanelToHome();
+        return;
+      }
+
+      activeEl.classList.add('active');
+      if (isInlineDetailMode()) {
+        if (moveDetailPanelToEvent(selectedEventId)) {
+          activeEl.classList.add('expanded');
+        }
+      } else {
+        moveDetailPanelToHome();
+      }
+    }
 
     // Classify tag styles by event name.
     function getTagClass(eventName) {
@@ -1770,6 +1945,7 @@
           </div>
         </div>
         ${isMock}
+        <div class="event-inline-detail" id="inline-detail-${eventKey}" onclick="event.stopPropagation()"></div>
       `;
       return div;
     }
@@ -1817,9 +1993,11 @@
       });
 
       // Replace current items.
+      moveDetailPanelToHome();
       const currentItems = eventListContainer.querySelectorAll('.event-item');
       currentItems.forEach(el => el.remove());
       eventListContainer.appendChild(fragment);
+      syncDetailPlacementAfterRender();
       lucide.createIcons();
     }
 
@@ -1933,12 +2111,22 @@
 
     // Select an event and render details.
     function selectEvent(eventId) {
+      const shouldCollapse =
+        isInlineDetailMode() &&
+        selectedEventId === eventId &&
+        detailPanelBody.style.display !== 'none' &&
+        detailPanelBody.parentElement &&
+        detailPanelBody.parentElement.id === `inline-detail-${eventId}`;
+
+      if (shouldCollapse) {
+        collapseInlineDetail();
+        return;
+      }
+
       selectedEventId = eventId;
       
       // Update active list item.
-      document.querySelectorAll('.event-item').forEach(el => {
-        el.classList.remove('active');
-      });
+      resetEventSelectionClasses();
       const activeEl = document.getElementById(`evt-item-${eventId}`);
       if (activeEl) {
         activeEl.classList.add('active');
@@ -2051,6 +2239,16 @@
       // Toggle detail panel state.
       detailEmptyState.style.display = 'none';
       detailPanelBody.style.display = 'flex';
+
+      if (isInlineDetailMode()) {
+        if (moveDetailPanelToEvent(eventId) && activeEl) {
+          activeEl.classList.add('expanded');
+        }
+      } else {
+        moveDetailPanelToHome();
+      }
+
+      lucide.createIcons();
     }
 
     // Inject sample data so first-time visitors can see the layout.
@@ -2120,7 +2318,9 @@
         ];
         events = mockEvents;
         updateDashboard();
-        selectEvent(getEventKey(mockEvents[0]));
+        if (!isInlineDetailMode()) {
+          selectEvent(getEventKey(mockEvents[0]));
+        }
       }
     }
 
@@ -2147,7 +2347,9 @@
           if (historyEvents && historyEvents.length > 0) {
             events = historyEvents;
             updateDashboard();
-            selectEvent(getEventKey(events[0]));
+            if (!isInlineDetailMode()) {
+              selectEvent(getEventKey(events[0]));
+            }
           } else {
             injectMockDataIfEmpty();
           }
@@ -2171,7 +2373,9 @@
           updateDashboard();
           
           // Automatically select the newest event.
-          selectEvent(getEventKey(newEvent));
+          if (!isInlineDetailMode()) {
+            selectEvent(getEventKey(newEvent));
+          }
 
         } catch (err) {
           console.error("Failed to parse live event", err);
@@ -2200,6 +2404,17 @@
         activeEventSource = null;
       }
       initSSE();
+    }
+
+    function handleDetailModeChange() {
+      syncDetailPlacementAfterRender();
+      lucide.createIcons();
+    }
+
+    if (inlineDetailMedia.addEventListener) {
+      inlineDetailMedia.addEventListener('change', handleDetailModeChange);
+    } else if (inlineDetailMedia.addListener) {
+      inlineDetailMedia.addListener(handleDetailModeChange);
     }
 
     // Start connection.
