@@ -7,7 +7,7 @@ import uuid
 
 app = Flask(__name__)
 
-# 設定日誌格式
+# Configure logging.
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
@@ -16,66 +16,123 @@ logging.basicConfig(
     ]
 )
 
-# 讀取認證 Token，若未設定環境變數則使用預設值（建議在 GCP Cloud Run 中透過環境變數設定此金鑰）
-VORTEX_VERIFICATION_TOKEN = os.getenv("VORTEX_TOKEN", "vortex_default_secure_token")
-FALLBACK_VORTEX_TOKEN = os.getenv("FALLBACK_VORTEX_TOKEN", "")
-ACCEPTED_VORTEX_TOKENS = {
-    token for token in [VORTEX_VERIFICATION_TOKEN, FALLBACK_VORTEX_TOKEN] if token
-}
+DEFAULT_VORTEX_TOKEN = "9ea784d08b87d3a3f0f44114236592218ed8beb6eb8d411f"
+DEFAULT_RUNTIME_TOKEN = os.getenv("VORTEX_TOKEN", DEFAULT_VORTEX_TOKEN)
+KNOWN_VORTEX_TOKENS = {DEFAULT_RUNTIME_TOKEN}
 
-# 全域變數：儲存所有 Webhook 事件（新事件在最前面）
-EVENT_HISTORY = []
-# 全域變數：所有連接中前端用戶的訊息 Queue 列表
+# Event history is partitioned by X-Vortex-Token. New events are stored first.
+EVENT_HISTORY_BY_TOKEN = {}
+# Message queues for connected dashboard clients.
 SUBSCRIBERS = []
 
-def broadcast_event(event_data):
-    """將新事件存入歷史並廣播給所有連線中的前端"""
-    # 存入歷史，不在應用層限制事件數量。
-    EVENT_HISTORY.insert(0, event_data)
+def normalize_token(token):
+    return str(token or "").strip()
+
+def register_token(token):
+    clean_token = normalize_token(token)
+    if clean_token:
+        KNOWN_VORTEX_TOKENS.add(clean_token)
+    return clean_token
+
+def get_event_history(token):
+    clean_token = register_token(token)
+    return EVENT_HISTORY_BY_TOKEN.setdefault(clean_token, [])
+
+@app.route('/settings/token', methods=['GET', 'POST'])
+def webhook_token_setting():
+    """Read the default token or register a dashboard-scoped X-Vortex-Token."""
+
+    if request.method == 'GET':
+        return jsonify({"x_vortex_token": DEFAULT_RUNTIME_TOKEN}), 200
+
+    payload = request.get_json(force=True, silent=True) or {}
+    next_token = str(payload.get("x_vortex_token") or "").strip()
+    if not next_token:
+        return jsonify({
+            "status": "error",
+            "message": "X-Vortex-Token cannot be empty."
+        }), 400
+
+    register_token(next_token)
+    logging.info("X-Vortex-Token registered from dashboard.")
+    return jsonify({
+        "status": "success",
+        "x_vortex_token": next_token
+    }), 200
+
+def broadcast_event(token, event_data):
+    """Store a new event and broadcast it to connected dashboard clients."""
+    clean_token = register_token(token)
+    history = get_event_history(clean_token)
+    history.insert(0, event_data)
         
-    # 廣播給所有 active 的 SSE 連線
-    for sub_queue in list(SUBSCRIBERS):
+    # Broadcast only to active SSE connections subscribed to the same token.
+    for subscriber in list(SUBSCRIBERS):
         try:
-            sub_queue.put(event_data)
+            if subscriber["token"] == clean_token:
+                subscriber["queue"].put({"type": "message", "data": event_data})
         except Exception as e:
-            logging.error(f"無法發送事件給訂閱者: {e}")
-            if sub_queue in SUBSCRIBERS:
-                SUBSCRIBERS.remove(sub_queue)
+            logging.error(f"Failed to send event to subscriber: {e}")
+            if subscriber in SUBSCRIBERS:
+                SUBSCRIBERS.remove(subscriber)
+
+def broadcast_clear(token):
+    """Broadcast a clear command to connected dashboard clients."""
+    clean_token = normalize_token(token)
+    for subscriber in list(SUBSCRIBERS):
+        try:
+            if subscriber["token"] == clean_token:
+                subscriber["queue"].put({"type": "clear", "data": {}})
+        except Exception as e:
+            logging.error(f"Failed to send clear command to subscriber: {e}")
+            if subscriber in SUBSCRIBERS:
+                SUBSCRIBERS.remove(subscriber)
 
 @app.route('/webhook', methods=['POST'])
 def handle_vortex_webhook():
     import time
     from datetime import datetime, timezone
 
-    # 1. 取得原始 Request 資訊（用於偵錯）
+    # 1. Capture raw request data for debugging.
     raw_body_str = request.get_data(as_text=True)
-    client_token = request.headers.get('X-Vortex-Token')
+    client_token = normalize_token(request.headers.get('X-Vortex-Token'))
     
-    # 驗證 Token 是否合法
-    token_valid = client_token in ACCEPTED_VORTEX_TOKENS
+    # Reject mismatched tokens before parsing or broadcasting the event.
+    token_valid = bool(client_token) and client_token in KNOWN_VORTEX_TOKENS
+    if not token_valid:
+        logging.warning(
+            "Rejected webhook due to X-Vortex-Token mismatch. source=%s received=%s",
+            request.remote_addr,
+            client_token or "None"
+        )
+        return jsonify({
+            "status": "error",
+            "message": "X-Vortex-Token mismatch. Event rejected.",
+            "received_token": client_token or "None"
+        }), 401
     
-    # 2. 嘗試解析 JSON
+    # 2. Parse JSON when possible.
     is_json = True
     payload = {}
     try:
         if request.is_json:
             payload = request.get_json(force=True, silent=True) or {}
         else:
-            # 嘗試強行解析 body
+            # Try parsing the raw body as JSON.
             payload = json.loads(raw_body_str)
     except Exception:
         is_json = False
         payload = {}
 
-    # 3. 讀取 VIVOTEK Vortex 警報事件參數 (依自訂 Payload 欄位解析，包含 UTC 與本地 ISO 等多種時間格式)
+    # 3. Map VIVOTEK Vortex alarm event fields and timestamp variants.
     utc_time_str = ""
     
-    # 優先權 1: UtcISOTime (e.g., "2026-05-29T09:50:00Z")
+    # Priority 1: UtcISOTime (e.g. "2026-05-29T09:50:00Z")
     utc_iso_val = payload.get("utcISOTime") or payload.get("utc_iso_time")
     if utc_iso_val:
         utc_time_str = utc_iso_val
         
-    # 優先權 2: UtcTime (Unix timestamp in seconds/milliseconds)
+    # Priority 2: UtcTime (Unix timestamp in seconds/milliseconds)
     if not utc_time_str:
         utc_time_val = payload.get("utcTime") or payload.get("utc_time_val")
         if utc_time_val:
@@ -87,13 +144,13 @@ def handle_vortex_webhook():
             except Exception:
                 pass
                 
-    # 優先權 3: LocalISOTime
+    # Priority 3: LocalISOTime
     if not utc_time_str:
         local_iso_val = payload.get("localISOTime") or payload.get("local_iso_time")
         if local_iso_val:
             utc_time_str = local_iso_val
 
-    # 優先權 4: LocalTime (Unix timestamp)
+    # Priority 4: LocalTime (Unix timestamp)
     local_time_val = payload.get("localTime") or payload.get("local_time")
     if not utc_time_str and local_time_val:
         try:
@@ -104,7 +161,7 @@ def handle_vortex_webhook():
         except Exception:
             pass
 
-    # 優先權 5: 當前伺服器時間 Fallback
+    # Priority 5: current server time fallback.
     if not utc_time_str:
         utc_time_str = datetime.now(timezone.utc).isoformat()
 
@@ -136,7 +193,7 @@ def handle_vortex_webhook():
         "image_person": payload.get("imagePerson") or payload.get("image_person") or "",
         "thumbnail": payload.get("thumbnail") or payload.get("Thumbnail") or "",
         "utc_time": utc_time_str,
-        # 偵錯用欄位
+        # Debug fields.
         "debug_raw_headers": {k: v for k, v in request.headers.items() if k.lower() != "authorization"},
         "debug_raw_body": raw_body_str,
         "debug_token_valid": token_valid,
@@ -144,57 +201,63 @@ def handle_vortex_webhook():
         "debug_received_token": client_token or "None"
     }
 
-    # 4. 輸出事件日誌
+    # 4. Log accepted event details.
     logging.info("=" * 50)
-    logging.info(f"🔔 Webhook 進入 (Token驗證: {token_valid}, 是否JSON: {is_json})")
-    logging.info(f"來源 IP: {request.remote_addr}")
-    logging.info(f"網頁顯示名稱 (Device): {device_name} (MAC: {mac})")
-    logging.info(f"事件內容 (Event): {event_name}")
+    logging.info(f"Webhook received (token_valid={token_valid}, is_json={is_json})")
+    logging.info(f"Source IP: {request.remote_addr}")
+    logging.info(f"Device: {device_name} (MAC: {mac})")
+    logging.info(f"Event: {event_name}")
     logging.info("=" * 50)
 
-    # 5. 廣播給連接的網頁端 (即使驗證失敗或不是 JSON，我們也廣播，讓前端顯示偵錯狀態)
-    broadcast_event(event_data)
-
-    # 6. 回應發送端
-    if not token_valid:
-        return jsonify({
-            "status": "warning",
-            "message": "Webhook received but verification token failed. Please check X-Vortex-Token header.",
-            "expected_token": "configured VORTEX_TOKEN",
-            "received_token": client_token or "None"
-        }), 200
+    # 5. Broadcast accepted events to connected dashboard clients.
+    broadcast_event(client_token, event_data)
 
     return jsonify({"status": "success", "message": "Vortex Webhook processed"}), 200
 
+@app.route('/events/clear', methods=['POST'])
+def clear_events():
+    """Clear all stored events and notify connected dashboard clients."""
+    payload = request.get_json(force=True, silent=True) or {}
+    token = normalize_token(payload.get("x_vortex_token") or request.args.get("token") or DEFAULT_RUNTIME_TOKEN)
+    history = get_event_history(token)
+    history.clear()
+    broadcast_clear(token)
+    logging.info("Dashboard events cleared for token scope.")
+    return jsonify({"status": "success", "message": "All events cleared."}), 200
+
 @app.route('/events')
 def stream_events():
-    """Server-Sent Events (SSE) 串流端點，提供即時推播給網頁"""
+    """Server-Sent Events (SSE) endpoint for real-time dashboard updates."""
     def event_generator():
-        # 為當前連接的前端建立一個專屬 Queue
+        token = register_token(request.args.get("token") or DEFAULT_RUNTIME_TOKEN)
+        # Create a dedicated queue for this dashboard connection.
         client_queue = queue.Queue()
-        SUBSCRIBERS.append(client_queue)
+        subscriber = {"queue": client_queue, "token": token}
+        SUBSCRIBERS.append(subscriber)
 
-        # 先送一個註解，讓代理與瀏覽器立即建立串流，不等第一筆警報才 flush。
+        # Flush the stream immediately instead of waiting for the first alarm.
         yield ": connected\n\n"
         
-        # 連接建立時，先將當前已有的歷史事件發送給前端
-        yield f"event: history\ndata: {json.dumps(EVENT_HISTORY, ensure_ascii=False)}\n\n"
+        # Send current history when the connection is established.
+        yield f"event: history\ndata: {json.dumps(get_event_history(token), ensure_ascii=False)}\n\n"
         
         try:
             while True:
                 try:
-                    # 從 Queue 中獲取最新事件，阻塞 15 秒以實現長輪詢
-                    event_data = client_queue.get(timeout=15)
-                    yield f"event: message\ndata: {json.dumps(event_data, ensure_ascii=False)}\n\n"
+                    # Wait up to 15 seconds for the next event.
+                    queue_item = client_queue.get(timeout=15)
+                    event_type = queue_item.get("type", "message")
+                    event_data = queue_item.get("data", {})
+                    yield f"event: {event_type}\ndata: {json.dumps(event_data, ensure_ascii=False)}\n\n"
                 except queue.Empty:
-                    # 發送 Keep-Alive 註釋，避免 Cloud Run / nginx 逾時斷開
+                    # Keep the connection alive through proxies.
                     yield ": keep-alive\n\n"
         except GeneratorExit:
-            # 瀏覽器分頁關閉或斷開連線
+            # Browser tab closed or connection disconnected.
             pass
         finally:
-            if client_queue in SUBSCRIBERS:
-                SUBSCRIBERS.remove(client_queue)
+            if subscriber in SUBSCRIBERS:
+                SUBSCRIBERS.remove(subscriber)
                 
     response = app.response_class(
         stream_with_context(event_generator()),
@@ -206,19 +269,25 @@ def stream_events():
 
 @app.route('/thumbnail/<event_id>')
 def serve_thumbnail(event_id):
-    """將事件中的 Base64 縮圖解碼並重新編碼成瀏覽器穩定顯示的 JPEG"""
+    """Decode an event thumbnail and normalize it as a browser-friendly JPEG."""
     import base64
     import io
     from flask import Response
 
-    for evt in EVENT_HISTORY:
-        if (
-            (evt.get("internal_id") == event_id or evt.get("event_id") == event_id)
-            and evt.get("thumbnail")
-        ):
+    token = normalize_token(request.args.get("token"))
+    histories = [get_event_history(token)] if token else EVENT_HISTORY_BY_TOKEN.values()
+
+    for history in histories:
+        for evt in history:
+            if not (
+                (evt.get("internal_id") == event_id or evt.get("event_id") == event_id)
+                and evt.get("thumbnail")
+            ):
+                continue
+
             try:
                 raw_b64 = str(evt["thumbnail"]).strip()
-                # 移除 data:image 前綴 (如果有)
+                # Remove data:image prefix when present.
                 if raw_b64.startswith("data:"):
                     raw_b64 = raw_b64.split(",", 1)[1]
                 raw_b64 = "".join(raw_b64.split())
@@ -245,7 +314,7 @@ def serve_thumbnail(event_id):
                     )
                 except Exception as normalize_error:
                     logging.warning(
-                        f"縮圖重新編碼失敗，改回傳原始圖片 event_id={event_id}: {normalize_error}"
+                        f"Thumbnail normalization failed; returning raw image event_id={event_id}: {normalize_error}"
                     )
                     return Response(
                         img_bytes,
@@ -253,14 +322,14 @@ def serve_thumbnail(event_id):
                         headers={'Cache-Control': 'no-store, max-age=0'}
                     )
             except Exception as e:
-                logging.error(f"縮圖解碼失敗 event_id={event_id}: {e}")
+                logging.error(f"Thumbnail decode failed event_id={event_id}: {e}")
                 return Response("Decode error", status=500)
 
     return Response("Not found", status=404)
 
 @app.route('/', methods=['GET'])
 def index():
-    # 渲染儀表板網頁
+    # Render dashboard page.
     response = make_response(render_template('index.html'))
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
@@ -268,5 +337,5 @@ def index():
     return response
 
 if __name__ == '__main__':
-    # 本地測試時執行
+    # Local development entrypoint.
     app.run(host='0.0.0.0', port=8080, debug=True)

@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="VIVOTEK Vortex 警報事件即時 Webhook 監控儀表板 - 提供即時警報流與細節展示。">
+  <meta name="description" content="VIVOTEK Vortex real-time webhook monitoring dashboard for alarm streams and event details.">
   <title>Vortex Webhook Real-time Dashboard</title>
   
-  <!-- 引入 Google Fonts (Outfit & Inter) -->
+  <!-- Google Fonts (Outfit & Inter) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- 引入 Lucide Icons 用於圖標 -->
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    /* CSS 設計系統與變數 */
+    /* Design tokens */
     :root {
       --bg-gradient: radial-gradient(circle at top, #1e1b4b 0%, #0f172a 100%);
       --panel-bg: rgba(30, 41, 59, 0.45);
@@ -47,7 +47,7 @@
       overflow-x: hidden;
     }
 
-    /* 捲軸美化 */
+    /* Scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
     }
@@ -62,7 +62,7 @@
       background: rgba(255, 255, 255, 0.3);
     }
 
-    /* 頂部 Glassmorphism 導覽列 */
+    /* Top navigation */
     header {
       background: rgba(15, 23, 42, 0.6);
       backdrop-filter: blur(16px);
@@ -115,9 +115,10 @@
       display: flex;
       align-items: center;
       gap: 1.5rem;
+      min-width: 0;
     }
 
-    /* 連線狀態指標 */
+    /* Connection status */
     .status-badge {
       display: flex;
       align-items: center;
@@ -176,7 +177,7 @@
       100% { transform: scale(2.8); opacity: 0; }
     }
 
-    /* 儀表板主要區塊 */
+    /* Main dashboard */
     .dashboard-container {
       max-width: 1500px;
       width: 100%;
@@ -198,7 +199,7 @@
       }
     }
 
-    /* 卡片通用樣式 */
+    /* Shared card styles */
     .card-panel {
       background: var(--panel-bg);
       backdrop-filter: blur(12px);
@@ -241,7 +242,7 @@
       color: var(--text-secondary);
     }
 
-    /* Webhook 事件列表 */
+    /* Webhook event list */
     .event-list {
       overflow-y: auto;
       display: flex;
@@ -352,7 +353,7 @@
       white-space: nowrap;
     }
 
-    /* 依事件類型套用不同顏色 */
+    /* Event tag categories */
     .event-name-tag.person {
       background: rgba(244, 114, 182, 0.15);
       color: var(--accent-pink);
@@ -415,7 +416,7 @@
       color: var(--text-secondary);
     }
 
-    /* 空狀態 (Empty State) */
+    /* Empty state */
     .empty-state {
       display: flex;
       flex-direction: column;
@@ -433,7 +434,7 @@
       opacity: 0.7;
     }
 
-    /* 事件細節面板 */
+    /* Event detail panel */
     .detail-container {
       display: flex;
       flex-direction: column;
@@ -488,7 +489,7 @@
       color: var(--accent-cyan);
     }
 
-    /* 警報圖片展示區 */
+    /* Alarm image area */
     .image-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -592,7 +593,7 @@
       transform: none;
     }
 
-    /* JSON 原始資料展示區 */
+    /* Raw JSON area */
     .json-wrapper {
       background: rgba(15, 23, 42, 0.6);
       border: 1px solid var(--panel-border);
@@ -624,7 +625,7 @@
       letter-spacing: 0.05em;
     }
 
-    /* 狀態卡片 (頂部統計) */
+    /* Summary cards */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -656,7 +657,7 @@
       color: var(--text-primary);
     }
 
-    /* 頁尾 */
+    /* Footer */
     footer {
       text-align: center;
       padding: 1.5rem;
@@ -798,17 +799,35 @@
       border: 1px solid #ededed;
       border-radius: 16px;
       padding: 0.9rem;
+      min-height: 6.8rem;
+      justify-content: space-between;
     }
 
     .stat-title {
       color: #737373;
       letter-spacing: 0;
       text-transform: none;
+      min-height: 2.4rem;
+      line-height: 1.2rem;
+      display: flex;
+      align-items: flex-start;
     }
 
     .stat-value {
       color: #171717;
       font-size: 1.55rem;
+      line-height: 2rem;
+      min-height: 2rem;
+      display: flex;
+      align-items: baseline;
+    }
+
+    .stat-time {
+      font-size: 1.05rem;
+      line-height: 2rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .event-list {
@@ -990,11 +1009,217 @@
         grid-template-columns: 1fr;
       }
     }
+
+    .token-settings {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: #ffffff;
+      border: 1px solid #dcdcdc;
+      border-radius: 999px;
+      padding: 0.35rem 0.45rem 0.35rem 0.75rem;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      width: min(62vw, 720px);
+      min-width: 0;
+    }
+
+    .webhook-endpoint {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: #ffffff;
+      border: 1px solid #dcdcdc;
+      border-radius: 999px;
+      padding: 0.35rem 0.45rem 0.35rem 0.75rem;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      min-width: 0;
+      max-width: min(54vw, 620px);
+    }
+
+    .webhook-endpoint-label {
+      font-size: 0.78rem;
+      color: #525252;
+      font-weight: 700;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .webhook-endpoint code {
+      background: #f5f5f5;
+      color: #171717;
+      border-radius: 999px;
+      padding: 0.42rem 0.7rem;
+      font-family: monospace;
+      font-size: 0.78rem;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .webhook-copy-status {
+      font-size: 0.75rem;
+      color: var(--success);
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .token-settings label {
+      font-size: 0.78rem;
+      color: #525252;
+      font-weight: 700;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .token-settings input {
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: #f5f5f5;
+      color: #171717;
+      border-radius: 999px;
+      padding: 0.42rem 0.7rem;
+      font-family: monospace;
+      font-size: 0.78rem;
+    }
+
+    .icon-button {
+      width: 2rem;
+      height: 2rem;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      border: 1px solid #d4d4d4;
+      background: #ffffff;
+      color: #404040;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: 800;
+      transition: background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .icon-button:hover {
+      background: #f5f5f5;
+      border-color: #a3a3a3;
+    }
+
+    #token-save-button {
+      width: auto;
+      min-width: 3.5rem;
+      padding: 0 0.75rem;
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    #clear-events-button {
+      width: auto;
+      min-width: 4.25rem;
+      padding: 0 0.75rem;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    .token-status {
+      font-size: 0.75rem;
+      color: #737373;
+      min-width: 0;
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
+    .help-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.45);
+      padding: 1.5rem;
+    }
+
+    .help-modal.is-open {
+      display: flex;
+    }
+
+    .help-dialog {
+      width: min(92vw, 560px);
+      background: #ffffff;
+      border: 1px solid #e5e5e5;
+      border-radius: 20px;
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+      padding: 1.25rem;
+      color: #171717;
+    }
+
+    .help-dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      border-bottom: 1px solid #ededed;
+      padding-bottom: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .help-dialog h2 {
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .help-dialog ol {
+      padding-left: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      color: #404040;
+      line-height: 1.55;
+      font-size: 0.92rem;
+    }
+
+    .help-dialog code {
+      background: #f5f5f5;
+      border: 1px solid #e5e5e5;
+      padding: 0.08rem 0.35rem;
+      border-radius: 6px;
+      font-family: monospace;
+      color: #0f766e;
+    }
+
+    @media (max-width: 980px) {
+      .header-status-section {
+        flex-wrap: wrap;
+      }
+
+      .token-settings {
+        order: 2;
+        width: 100%;
+        max-width: none;
+        border-radius: 16px;
+      }
+
+      .webhook-endpoint {
+        order: 1;
+        width: 100%;
+        max-width: none;
+        border-radius: 16px;
+      }
+
+      .token-settings input {
+        flex: 1;
+        width: auto;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <!-- 頂部導覽列 -->
+  <!-- Top navigation -->
   <header>
     <div class="header-logo-section">
       <a class="brand-logo-link" href="https://www.vortexcloud.com/tc" target="_blank" rel="noopener noreferrer" aria-label="VORTEX official website">
@@ -1002,143 +1227,180 @@
       </a>
       <div>
         <h1 id="dashboard-title">Webhook Live Monitor</h1>
-        <p class="card-subtitle">VIVOTEK Vortex 警報事件即時監控</p>
+        <p class="card-subtitle">VIVOTEK Vortex real-time alarm monitoring</p>
       </div>
     </div>
     <div class="header-status-section">
+      <div class="webhook-endpoint" aria-label="Customer webhook URL">
+        <span class="webhook-endpoint-label">Webhook URL</span>
+        <code id="webhook-url-text">https://webhook.vivotek.tools/webhook</code>
+        <button id="webhook-copy-button" class="icon-button" type="button" title="Copy webhook URL" aria-label="Copy webhook URL">
+          <i data-lucide="copy" style="width: 1rem; height: 1rem;"></i>
+        </button>
+        <span id="webhook-copy-status" class="webhook-copy-status"></span>
+      </div>
+      <div class="token-settings" aria-label="X-Vortex-Token setting">
+        <label for="token-input">X-Vortex-Token</label>
+        <input id="token-input" type="text" autocomplete="off" spellcheck="false">
+        <button id="token-help-button" class="icon-button" type="button" title="Setup guide" aria-label="Setup guide">?</button>
+        <button id="token-save-button" class="icon-button" type="button" title="Save token">Save</button>
+        <span id="token-save-status" class="token-status"></span>
+      </div>
       <div id="status-badge" class="status-badge disconnected">
         <div class="status-dot"></div>
-        <span id="status-text">未連線</span>
+        <span id="status-text">Disconnected</span>
       </div>
     </div>
   </header>
 
-  <!-- 儀表板主內容 -->
+  <div id="token-help-modal" class="help-modal" role="dialog" aria-modal="true" aria-labelledby="token-help-title">
+    <div class="help-dialog">
+      <div class="help-dialog-header">
+        <h2 id="token-help-title">X-Vortex-Token Setup Guide</h2>
+        <button id="token-help-close" class="icon-button" type="button" title="Close" aria-label="Close">×</button>
+      </div>
+      <ol>
+        <li>Open the webhook settings page in VORTEX Portal.</li>
+        <li>Set the webhook URL to <code>https://webhook.vivotek.tools/webhook</code>.</li>
+        <li>Add a custom header named <code>X-Vortex-Token</code>.</li>
+        <li>Set the header value to the token saved in this dashboard.</li>
+        <li>After saving, this server accepts only events whose <code>X-Vortex-Token</code> header matches the current token.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Main dashboard content -->
   <div class="dashboard-container">
     
-    <!-- 左側面版：接收到的 Webhook 列表 -->
+    <!-- Left panel: received webhook list -->
     <div class="card-panel">
       <div class="card-title-bar">
         <div class="card-title">
           <i data-lucide="list-video"></i>
-          <span>警報流 (Alarm Stream)</span>
+          <span>Alarm Stream</span>
         </div>
-        <span id="event-count-badge" class="status-badge">總計: 0</span>
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 0 0 auto;">
+          <button id="clear-events-button" class="icon-button" type="button" title="Clear all events" aria-label="Clear all events">
+            <i data-lucide="trash-2" style="width: 1rem; height: 1rem;"></i>
+            <span>Clear</span>
+          </button>
+          <span id="event-count-badge" class="status-badge">Total: 0</span>
+        </div>
       </div>
 
-      <!-- 統計數據卡片 -->
+      <!-- Summary cards -->
       <div class="stats-grid">
         <div class="stat-card">
-          <span class="stat-title">今日警報</span>
+          <span class="stat-title">Today's alarms</span>
           <span id="stat-today" class="stat-value">0</span>
         </div>
         <div class="stat-card">
-          <span class="stat-title">受監控相機</span>
+          <span class="stat-title">Monitored cameras</span>
           <span id="stat-cameras" class="stat-value">0</span>
         </div>
         <div class="stat-card">
-          <span class="stat-title">最近活動</span>
-          <span id="stat-latest-time" class="stat-value" style="font-size: 0.9rem; line-height: 1.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">無</span>
+          <span class="stat-title">Latest activity</span>
+          <span id="stat-latest-time" class="stat-value stat-time">None</span>
         </div>
       </div>
 
-      <!-- 事件滾動列表 -->
+      <!-- Event scroll list -->
       <div id="event-list" class="event-list">
         <div class="empty-state" id="empty-state">
           <i data-lucide="wifi-off" style="width: 3rem; height: 3rem;"></i>
           <div>
-            <h3>尚未接收到 Webhook 事件</h3>
-            <p style="font-size: 0.85rem; margin-top: 0.25rem;">請在 Vortex Portal 設定 Webhook 發送至本伺服器，或使用 curl 發送模擬測試。</p>
+            <h3>No webhook events received yet</h3>
+            <p style="font-size: 0.85rem; margin-top: 0.25rem;">Set the VORTEX Portal webhook URL to https://webhook.vivotek.tools/webhook, then add the X-Vortex-Token header shown above.</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 右側面板：單一事件的詳細內容與 RAW JSON -->
+    <!-- Right panel: selected event details and raw JSON -->
     <div class="card-panel">
       <div class="card-title-bar">
         <div class="card-title">
           <i data-lucide="scan-eye"></i>
-          <span>警報細節 (Alarm Details)</span>
+          <span>Alarm Details</span>
         </div>
       </div>
 
       <div id="detail-panel-body" class="detail-container" style="display: none;">
         
-        <!-- Token 驗證錯誤警報 -->
+        <!-- Token validation warning -->
         <div id="detail-debug-warning" style="background: rgba(248, 113, 113, 0.12); border: 1px solid rgba(248, 113, 113, 0.3); padding: 0.75rem 1rem; border-radius: 12px; color: var(--danger); font-size: 0.85rem; display: none; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem;">
           <div style="font-weight: bold; display: flex; align-items: center; gap: 0.35rem;">
             <i data-lucide="alert-octagon" style="width: 1rem; height: 1rem;"></i>
-            Token 驗證失敗 (X-Vortex-Token Mismatch)
+            Token validation failed (X-Vortex-Token mismatch)
           </div>
-          <div>收到的 Token 是：<code id="detail-debug-received-token" style="background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 4px; font-family: monospace;"></code>，與 Cloud Run 目前設定的 <code>VORTEX_TOKEN</code> 不一致。</div>
-          <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem;">請檢查 VORTEX Portal 中的自訂 Header 設定（Header 名稱應為 <code>X-Vortex-Token</code>）。</div>
+          <div>The received token was <code id="detail-debug-received-token" style="background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 4px; font-family: monospace;"></code>, which does not match the current Cloud Run <code>VORTEX_TOKEN</code>.</div>
+          <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem;">Check the VORTEX Portal custom header settings. The header name must be <code>X-Vortex-Token</code>.</div>
         </div>
 
-        <!-- 警報圖片展示區 -->
+        <!-- Alarm image area -->
         <div class="image-grid" id="detail-image-grid" style="display: none;">
           <div class="image-card" id="detail-image-face-container" style="display: none;">
             <div class="image-title">
               <i data-lucide="user-square" style="width: 0.9rem; height: 0.9rem; color: var(--accent-pink);"></i>
-              人臉截圖 (Face Crop)
+              Face Crop
             </div>
             <div id="detail-image-face-box" style="width: 100%;"></div>
           </div>
           <div class="image-card" id="detail-image-person-container" style="display: none;">
             <div class="image-title">
               <i data-lucide="accessibility" style="width: 0.9rem; height: 0.9rem; color: var(--accent-cyan);"></i>
-              全身截圖 (Person Crop)
+              Person Crop
             </div>
             <div id="detail-image-person-box" style="width: 100%;"></div>
           </div>
           <div class="image-card" id="detail-image-thumb-container" style="display: none;">
             <div class="image-title">
               <i data-lucide="image" style="width: 0.9rem; height: 0.9rem; color: var(--accent-purple);"></i>
-              警報縮圖 (Thumbnail)
+              Thumbnail
             </div>
             <div id="detail-image-thumb-box" style="width: 100%;"></div>
           </div>
         </div>
 
-        <!-- 基本與進階參數解析 -->
+        <!-- Parsed event fields -->
         <div class="detail-grid">
           <div>
             <div class="detail-row">
-              <div class="detail-label">事件名稱</div>
+              <div class="detail-label">Event name</div>
               <div class="detail-value" id="detail-event-name" style="color: var(--accent-pink);"></div>
             </div>
             <div class="detail-row">
-              <div class="detail-label">事件類型</div>
+              <div class="detail-label">Event type</div>
               <div class="detail-value" id="detail-event-type"></div>
             </div>
             <div class="detail-row">
-              <div class="detail-label">相機名稱</div>
+              <div class="detail-label">Camera name</div>
               <div class="detail-value" id="detail-device-name"></div>
             </div>
             <div class="detail-row">
-              <div class="detail-label">相機 MAC</div>
+              <div class="detail-label">Camera MAC</div>
               <div class="detail-value monospace" id="detail-mac"></div>
             </div>
             <div class="detail-row">
-              <div class="detail-label">相機 ID</div>
+              <div class="detail-label">Camera ID</div>
               <div class="detail-value monospace" id="detail-device-id" style="font-size: 0.8rem;"></div>
             </div>
             <div class="detail-row">
-              <div class="detail-label">相機群組</div>
+              <div class="detail-label">Camera group</div>
               <div class="detail-value" id="detail-device-group-name"></div>
             </div>
           </div>
           <div>
             <div class="detail-row">
-              <div class="detail-label">組織名稱</div>
+              <div class="detail-label">Organization</div>
               <div class="detail-value" id="detail-org-name"></div>
             </div>
             <div class="detail-row">
-              <div class="detail-label">配置規則</div>
+              <div class="detail-label">Profile</div>
               <div class="detail-value" id="detail-profile-name"></div>
             </div>
             <div class="detail-row">
-              <div class="detail-label">觸發時間</div>
+              <div class="detail-label">Trigger time</div>
               <div class="detail-value" id="detail-time"></div>
             </div>
             <div class="detail-row" id="detail-row-utc-iso" style="display: none;">
@@ -1146,58 +1408,58 @@
               <div class="detail-value monospace" id="detail-utc-iso" style="font-size: 0.8rem;"></div>
             </div>
             <div class="detail-row" id="detail-row-local-iso" style="display: none;">
-              <div class="detail-label">本地 ISO</div>
+              <div class="detail-label">Local ISO</div>
               <div class="detail-value monospace" id="detail-local-iso" style="font-size: 0.8rem;"></div>
             </div>
             <div class="detail-row">
-              <div class="detail-label">相機時區</div>
+              <div class="detail-label">Camera timezone</div>
               <div class="detail-value" id="detail-timezone"></div>
             </div>
             <div class="detail-row">
-              <div class="detail-label">事件 ID</div>
+              <div class="detail-label">Event ID</div>
               <div class="detail-value monospace" id="detail-event-id" style="font-size: 0.8rem;"></div>
             </div>
             <div class="detail-row">
-              <div class="detail-label">警報 ID</div>
+              <div class="detail-label">Alarm ID</div>
               <div class="detail-value monospace" id="detail-alarm-id" style="font-size: 0.8rem;"></div>
             </div>
           </div>
         </div>
 
-        <!-- 原始 JSON 展示 -->
+        <!-- Raw JSON display -->
         <div style="display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; margin-top: 0.5rem;">
-          <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">原始 JSON 承載 (Raw Payload)</div>
+          <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Raw Payload</div>
           <pre id="detail-json" class="json-wrapper"></pre>
         </div>
 
-        <!-- 偵錯資訊與原始 HTTP 標頭 -->
+        <!-- Debug information and raw HTTP headers -->
         <details style="margin-top: 0.5rem; border: 1px solid var(--panel-border); border-radius: 12px; background: rgba(15, 23, 42, 0.3); padding: 0.75rem 1rem;">
           <summary style="font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--text-secondary); outline: none; user-select: none;">
-            🔍 偵錯資訊與原始 HTTP 標頭 (HTTP Headers & Body)
+            Debug Information (HTTP Headers & Body)
           </summary>
           <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.8rem;">
             <div>
-              <span style="font-weight: 600; color: var(--accent-purple);">是否為 JSON 格式:</span>
+              <span style="font-weight: 600; color: var(--accent-purple);">JSON format:</span>
               <span id="detail-debug-is-json" style="font-weight: bold; margin-left: 0.25rem;"></span>
             </div>
             <div>
-              <div style="font-weight: 600; color: var(--accent-purple); margin-bottom: 0.25rem;">接收到的 HTTP 標頭 (Headers)</div>
+              <div style="font-weight: 600; color: var(--accent-purple); margin-bottom: 0.25rem;">Received HTTP Headers</div>
               <pre id="detail-debug-headers" style="background: rgba(0,0,0,0.4); padding: 0.5rem; border-radius: 6px; overflow-x: auto; color: var(--text-secondary); font-family: monospace; font-size: 0.75rem; max-height: 150px; overflow-y: auto;"></pre>
             </div>
             <div>
-              <div style="font-weight: 600; color: var(--accent-purple); margin-bottom: 0.25rem;">原始 Request Body</div>
+              <div style="font-weight: 600; color: var(--accent-purple); margin-bottom: 0.25rem;">Raw Request Body</div>
               <pre id="detail-debug-body" style="background: rgba(0,0,0,0.4); padding: 0.5rem; border-radius: 6px; overflow-x: auto; color: var(--text-secondary); font-family: monospace; font-size: 0.75rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;"></pre>
             </div>
           </div>
         </details>
       </div>
 
-      <!-- 沒有選擇事件時的預設狀態 -->
+      <!-- Default state when no event is selected -->
       <div class="empty-state" id="detail-empty-state" style="flex-grow: 1;">
         <i data-lucide="info" style="width: 2.5rem; height: 2.5rem;"></i>
         <div>
-          <h3>請選擇警報事件</h3>
-          <p style="font-size: 0.85rem; margin-top: 0.25rem;">在左側列表中點擊任何一筆警報，以檢視其詳細參數與完整 JSON 數據。</p>
+          <h3>Select an alarm event</h3>
+          <p style="font-size: 0.85rem; margin-top: 0.25rem;">Click any alarm in the left list to inspect its details and full JSON payload.</p>
         </div>
       </div>
 
@@ -1205,26 +1467,39 @@
 
   </div>
 
-  <!-- 頁尾 -->
+  <!-- Footer -->
   <footer>
     <p>VIVOTEK Vortex Webhook Receiver Dashboard &copy; 2026. Powered by Google Cloud Run.</p>
   </footer>
 
   <script>
-    // 初始化 Lucide 圖標
+    // Initialize Lucide icons.
     lucide.createIcons();
 
-    // 全域變數
+    // Global state.
+    const TOKEN_STORAGE_KEY = 'vortex_dashboard_x_vortex_token';
     let events = [];
     let selectedEventId = null;
     let cameraSet = new Set();
+    let currentToken = '';
+    let activeEventSource = null;
 
-    // DOM 元素選取
+    // DOM element references.
     const statusBadge = document.getElementById('status-badge');
     const statusText = document.getElementById('status-text');
+    const webhookUrlText = document.getElementById('webhook-url-text');
+    const webhookCopyButton = document.getElementById('webhook-copy-button');
+    const webhookCopyStatus = document.getElementById('webhook-copy-status');
+    const tokenInput = document.getElementById('token-input');
+    const tokenSaveButton = document.getElementById('token-save-button');
+    const tokenSaveStatus = document.getElementById('token-save-status');
+    const tokenHelpButton = document.getElementById('token-help-button');
+    const tokenHelpModal = document.getElementById('token-help-modal');
+    const tokenHelpClose = document.getElementById('token-help-close');
     const eventListContainer = document.getElementById('event-list');
     const emptyState = document.getElementById('empty-state');
     const eventCountBadge = document.getElementById('event-count-badge');
+    const clearEventsButton = document.getElementById('clear-events-button');
     const statToday = document.getElementById('stat-today');
     const statCameras = document.getElementById('stat-cameras');
     const statLatestTime = document.getElementById('stat-latest-time');
@@ -1232,7 +1507,7 @@
     const detailPanelBody = document.getElementById('detail-panel-body');
     const detailEmptyState = document.getElementById('detail-empty-state');
     
-    // 欄位選取
+    // Detail field references.
     const detailEventName = document.getElementById('detail-event-name');
     const detailEventType = document.getElementById('detail-event-type');
     const detailDeviceName = document.getElementById('detail-device-name');
@@ -1247,7 +1522,7 @@
     const detailEventId = document.getElementById('detail-event-id');
     const detailAlarmId = document.getElementById('detail-alarm-id');
     
-    // 圖片選取
+    // Image references.
     const detailImageGrid = document.getElementById('detail-image-grid');
     const detailImageFaceContainer = document.getElementById('detail-image-face-container');
     const detailImagePersonContainer = document.getElementById('detail-image-person-container');
@@ -1256,7 +1531,7 @@
     const detailImagePersonBox = document.getElementById('detail-image-person-box');
     const detailImageThumbBox = document.getElementById('detail-image-thumb-box');
 
-    // 偵錯欄位選取
+    // Debug field references.
     const detailDebugWarning = document.getElementById('detail-debug-warning');
     const detailDebugReceivedToken = document.getElementById('detail-debug-received-token');
     const detailDebugIsJson = document.getElementById('detail-debug-is-json');
@@ -1265,7 +1540,7 @@
     
     const detailJson = document.getElementById('detail-json');
 
-    // 格式化日期時間為本地顯示
+    // Format date/time for local display.
     function formatLocalTime(isoString) {
       if (!isoString || isoString.startsWith('Unknown')) return isoString;
       try {
@@ -1277,19 +1552,177 @@
       }
     }
 
-    // 更新連線狀態 UI
+    // Update connection status UI.
     function setConnectionStatus(status) {
       statusBadge.className = `status-badge ${status}`;
       if (status === 'connected') {
-        statusText.textContent = '即時連線中';
+        statusText.textContent = 'Live';
       } else if (status === 'connecting') {
-        statusText.textContent = '重新連線中...';
+        statusText.textContent = 'Reconnecting...';
       } else {
-        statusText.textContent = '已中斷連線';
+        statusText.textContent = 'Disconnected';
       }
     }
 
-    // 依事件名稱分類標籤類型
+    async function copyWebhookUrl() {
+      const url = webhookUrlText.textContent.trim();
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = url;
+          textarea.style.position = 'fixed';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          textarea.remove();
+        }
+        webhookCopyStatus.textContent = 'Copied';
+        window.setTimeout(() => {
+          if (webhookCopyStatus.textContent === 'Copied') webhookCopyStatus.textContent = '';
+        }, 2200);
+      } catch (err) {
+        console.error('Failed to copy webhook URL', err);
+        const range = document.createRange();
+        range.selectNodeContents(webhookUrlText);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        webhookCopyStatus.textContent = 'URL selected';
+      }
+    }
+
+    function setTokenStatus(message, tone = 'neutral') {
+      tokenSaveStatus.textContent = message;
+      if (tone === 'success') {
+        tokenSaveStatus.style.color = 'var(--success)';
+      } else if (tone === 'error') {
+        tokenSaveStatus.style.color = 'var(--danger)';
+      } else {
+        tokenSaveStatus.style.color = '#737373';
+      }
+    }
+
+    async function loadTokenSetting() {
+      try {
+        const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+        if (storedToken) {
+          tokenInput.value = storedToken;
+          currentToken = storedToken;
+          await registerToken(storedToken);
+          setTokenStatus('');
+          return storedToken;
+        }
+
+        const res = await fetch('/settings/token', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        currentToken = data.x_vortex_token || '';
+        tokenInput.value = currentToken;
+        setTokenStatus('');
+        return currentToken;
+      } catch (err) {
+        console.error('Failed to load X-Vortex-Token setting', err);
+        setTokenStatus('Load failed', 'error');
+        return currentToken;
+      }
+    }
+
+    async function registerToken(token) {
+      const res = await fetch('/settings/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ x_vortex_token: token })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+      return data.x_vortex_token || token;
+    }
+
+    async function saveTokenSetting() {
+      const nextToken = tokenInput.value.trim();
+      if (!nextToken) {
+        setTokenStatus('Required', 'error');
+        tokenInput.focus();
+        return;
+      }
+
+      tokenSaveButton.disabled = true;
+      setTokenStatus('Saving');
+      try {
+        const savedToken = await registerToken(nextToken);
+        currentToken = savedToken;
+        localStorage.setItem(TOKEN_STORAGE_KEY, savedToken);
+        tokenInput.value = savedToken;
+        clearDashboardEvents();
+        reconnectSSE();
+        setTokenStatus('Saved', 'success');
+        window.setTimeout(() => {
+          if (tokenSaveStatus.textContent === 'Saved') setTokenStatus('');
+        }, 2200);
+      } catch (err) {
+        console.error('Failed to save X-Vortex-Token setting', err);
+        setTokenStatus('Save failed', 'error');
+      } finally {
+        tokenSaveButton.disabled = false;
+      }
+    }
+
+    function openTokenHelp() {
+      tokenHelpModal.classList.add('is-open');
+    }
+
+    function closeTokenHelp() {
+      tokenHelpModal.classList.remove('is-open');
+    }
+
+    tokenSaveButton.addEventListener('click', saveTokenSetting);
+    tokenInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') saveTokenSetting();
+    });
+    tokenHelpButton.addEventListener('click', openTokenHelp);
+    tokenHelpClose.addEventListener('click', closeTokenHelp);
+    tokenHelpModal.addEventListener('click', (event) => {
+      if (event.target === tokenHelpModal) closeTokenHelp();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeTokenHelp();
+    });
+    webhookCopyButton.addEventListener('click', copyWebhookUrl);
+
+    function clearDashboardEvents() {
+      events = [];
+      selectedEventId = null;
+      updateDashboard();
+      detailPanelBody.style.display = 'none';
+      detailEmptyState.style.display = 'flex';
+      detailImageFaceBox.replaceChildren();
+      detailImagePersonBox.replaceChildren();
+      detailImageThumbBox.replaceChildren();
+    }
+
+    async function clearEvents() {
+      clearEventsButton.disabled = true;
+      try {
+        const res = await fetch('/events/clear', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ x_vortex_token: currentToken })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        clearDashboardEvents();
+      } catch (err) {
+        console.error('Failed to clear events', err);
+      } finally {
+        clearEventsButton.disabled = false;
+      }
+    }
+
+    clearEventsButton.addEventListener('click', clearEvents);
+
+    // Classify tag styles by event name.
     function getTagClass(eventName) {
       const lower = eventName.toLowerCase();
       if (lower.includes('person') || lower.includes('face') || lower.includes('human')) return 'person';
@@ -1298,7 +1731,7 @@
       return 'default';
     }
 
-    // 渲染單一事件項目
+    // Render one event item.
     function createEventItemElement(evt) {
       const eventKey = getEventKey(evt);
       const div = document.createElement('div');
@@ -1307,12 +1740,12 @@
       div.onclick = () => selectEvent(eventKey);
 
       const tagClass = getTagClass(evt.event_name);
-      const isMock = evt.is_mock ? '<span class="mock-badge">範例</span>' : '';
+      const isMock = evt.is_mock ? '<span class="mock-badge">Sample</span>' : '';
       const isUnauth = (evt.debug_token_valid === false) ? 'border-color: var(--danger); background: rgba(248, 113, 113, 0.05);' : '';
 
       div.style = isUnauth;
 
-      // 處理 Base64 縮圖 (Thumbnail)
+      // Render Base64 thumbnail.
       let thumbImgHtml = '';
       const src = getImageSource(evt.thumbnail);
       if (src) {
@@ -1341,13 +1774,13 @@
       return div;
     }
 
-    // 更新整個事件列表與統計數據
+    // Update event list and summary metrics.
     function updateDashboard() {
-      // 更新統計數字
-      eventCountBadge.textContent = `總計: ${events.length}`;
+      // Update summary counts.
+      eventCountBadge.textContent = `Total: ${events.length}`;
       statToday.textContent = events.filter(e => !e.is_mock).length;
       
-      // 更新相機總數
+      // Update camera count.
       cameraSet.clear();
       events.forEach(e => {
         if (e.mac && e.mac !== 'Unknown MAC' && e.mac !== 'N/A') {
@@ -1356,36 +1789,41 @@
       });
       statCameras.textContent = cameraSet.size;
 
-      // 更新最近活動時間
+      // Update latest activity time.
       const nonMockEvents = events.filter(e => !e.is_mock);
       if (nonMockEvents.length > 0) {
-        statLatestTime.textContent = new Date(nonMockEvents[0].utc_time).toLocaleTimeString('zh-TW');
+        statLatestTime.textContent = new Date(nonMockEvents[0].utc_time).toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
       } else {
-        statLatestTime.textContent = '無活動';
+        statLatestTime.textContent = 'No activity';
       }
 
-      // 如果有事件，隱藏 empty state
+      // Hide empty state when events exist.
       if (events.length > 0) {
         emptyState.style.display = 'none';
       } else {
         emptyState.style.display = 'flex';
       }
 
-      // 重新渲染列表
+      // Re-render list.
       const fragment = document.createDocumentFragment();
       events.forEach(evt => {
         const itemEl = createEventItemElement(evt);
         fragment.appendChild(itemEl);
       });
 
-      // 清空並重新加入
+      // Replace current items.
       const currentItems = eventListContainer.querySelectorAll('.event-item');
       currentItems.forEach(el => el.remove());
       eventListContainer.appendChild(fragment);
       lucide.createIcons();
     }
 
-    // 檢查字串是否為有效網址或 base64
+    // Check whether a string is a valid URL or base64 image.
     function isValidImage(imgStr) {
       if (!imgStr) return false;
       const str = imgStr.trim();
@@ -1393,7 +1831,7 @@
       return true;
     }
 
-    // 清理 Vortex 傳入的圖片字串；裸 base64 會補上 JPEG data URL 前綴
+    // Normalize image strings from Vortex; bare base64 receives a JPEG data URL prefix.
     function getEventKey(evt) {
       return evt && (evt.internal_id || evt.event_id || '');
     }
@@ -1413,7 +1851,7 @@
       return `data:image/jpeg;base64,${clean}`;
     }
 
-    // data:image 在新分頁常被瀏覽器擋成 about:blank，改用頁面內預覽
+    // Use an in-page preview because data:image can open as about:blank in a new tab.
     function openImagePreview(src, alt) {
       if (!src) return;
 
@@ -1435,7 +1873,7 @@
       document.body.appendChild(overlay);
     }
 
-    // 極簡圖片顯示：只用 <a><img></a>，避開原本 detail/card/canvas/background 包裝
+    // Keep image rendering simple with an <a><img></a> pair.
     function renderDetailImage(container, src, alt, fallbackSrc = '') {
       container.replaceChildren();
       if (!src) return;
@@ -1468,7 +1906,7 @@
         img.onerror = () => {
           container.replaceChildren();
           const errorText = document.createElement('div');
-          errorText.textContent = '圖片載入失敗';
+          errorText.textContent = 'Image failed to load';
           errorText.style.cssText = 'height: 220px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); background: #000; border-radius: 8px; width: 100%;';
           container.appendChild(errorText);
         };
@@ -1482,21 +1920,22 @@
       container.replaceChildren();
 
       if (eventId) {
-        const normalizedSrc = `/thumbnail/${encodeURIComponent(eventId)}?v=${Date.now()}`;
-        renderDetailImage(container, normalizedSrc, '警報縮圖', fallbackSrc);
+        const tokenPart = currentToken ? `&token=${encodeURIComponent(currentToken)}` : '';
+        const normalizedSrc = `/thumbnail/${encodeURIComponent(eventId)}?v=${Date.now()}${tokenPart}`;
+        renderDetailImage(container, normalizedSrc, 'Alarm thumbnail', fallbackSrc);
         return;
       }
 
-      renderDetailImage(container, fallbackSrc, '警報縮圖');
+      renderDetailImage(container, fallbackSrc, 'Alarm thumbnail');
     }
 
 
 
-    // 選擇特定事件展示細節
+    // Select an event and render details.
     function selectEvent(eventId) {
       selectedEventId = eventId;
       
-      // 更新列表中 active 樣式
+      // Update active list item.
       document.querySelectorAll('.event-item').forEach(el => {
         el.classList.remove('active');
       });
@@ -1505,26 +1944,26 @@
         activeEl.classList.add('active');
       }
 
-      // 找出該筆事件資料
+      // Find selected event data.
       const evt = events.find(e => getEventKey(e) === eventId);
       if (!evt) return;
 
-      // 填入細節面板
+      // Fill detail panel fields.
       detailEventName.textContent = evt.event_name;
-      detailEventType.textContent = evt.event_type || '無';
+      detailEventType.textContent = evt.event_type || 'None';
       detailDeviceName.textContent = evt.device_name;
       detailMac.textContent = evt.mac;
-      detailDeviceId.textContent = evt.device_id || '無';
-      detailDeviceGroupName.textContent = evt.device_group_name || '無';
+      detailDeviceId.textContent = evt.device_id || 'None';
+      detailDeviceGroupName.textContent = evt.device_group_name || 'None';
       
       detailOrgName.textContent = evt.org_name;
-      detailProfileName.textContent = evt.profile_name || '無';
+      detailProfileName.textContent = evt.profile_name || 'None';
       detailTime.textContent = formatLocalTime(evt.utc_time);
-      detailTimezone.textContent = evt.timezone || '無';
+      detailTimezone.textContent = evt.timezone || 'None';
       detailEventId.textContent = evt.event_id;
-      detailAlarmId.textContent = evt.alarm_id || '無';
+      detailAlarmId.textContent = evt.alarm_id || 'None';
 
-      // ISO 時間顯示邏輯
+      // ISO timestamp display logic.
       const detailRowUtcIso = document.getElementById('detail-row-utc-iso');
       const detailUtcIso = document.getElementById('detail-utc-iso');
       if (evt.utc_iso_time) {
@@ -1543,27 +1982,27 @@
         detailRowLocalIso.style.display = 'none';
       }
 
-      // 圖片欄位顯示邏輯：先設定顯示狀態 (display)，再填入 innerHTML，避免瀏覽器在 display: none 時不載入圖片的 bug
+      // Show image containers before injecting images so browsers load them reliably.
       const hasFace = isValidImage(evt.image_face);
       const hasPerson = isValidImage(evt.image_person);
       const hasThumb = isValidImage(evt.thumbnail);
       const showGrid = hasFace || hasPerson || hasThumb;
 
-      // 1. 先顯示最外層與各個容器
+      // 1. Show outer grid and image containers.
       detailImageGrid.style.display = showGrid ? 'grid' : 'none';
       detailImageFaceContainer.style.display = hasFace ? 'flex' : 'none';
       detailImagePersonContainer.style.display = hasPerson ? 'flex' : 'none';
       detailImageThumbContainer.style.display = hasThumb ? 'flex' : 'none';
 
-      // 2. 確定容器顯示後，再注入圖片元素
+      // 2. Inject image elements after containers are visible.
       if (hasFace) {
-        renderDetailImage(detailImageFaceBox, getImageSource(evt.image_face), '人臉截圖');
+        renderDetailImage(detailImageFaceBox, getImageSource(evt.image_face), 'Face crop');
       } else {
         detailImageFaceBox.replaceChildren();
       }
 
       if (hasPerson) {
-        renderDetailImage(detailImagePersonBox, getImageSource(evt.image_person), '全身截圖');
+        renderDetailImage(detailImagePersonBox, getImageSource(evt.image_person), 'Person crop');
       } else {
         detailImagePersonBox.replaceChildren();
       }
@@ -1575,13 +2014,13 @@
         detailImageThumbBox.replaceChildren();
       }
 
-      // 偵錯欄位顯示邏輯
+      // Debug field display logic.
       if (evt.is_mock) {
         detailDebugWarning.style.display = 'none';
-        detailDebugIsJson.textContent = '是 (Yes) (Mock)';
+        detailDebugIsJson.textContent = 'Yes (sample)';
         detailDebugIsJson.style.color = 'var(--text-secondary)';
-        detailDebugHeaders.textContent = '模擬事件，無標頭資料。';
-        detailDebugBody.textContent = '模擬事件，無原始 Body 資料。';
+        detailDebugHeaders.textContent = 'Sample event. No header data.';
+        detailDebugBody.textContent = 'Sample event. No raw body data.';
       } else {
         if (evt.debug_token_valid === false) {
           detailDebugWarning.style.display = 'flex';
@@ -1590,49 +2029,49 @@
           detailDebugWarning.style.display = 'none';
         }
 
-        detailDebugIsJson.textContent = evt.debug_is_json ? '是 (Yes)' : '否 (No)';
+        detailDebugIsJson.textContent = evt.debug_is_json ? 'Yes' : 'No';
         detailDebugIsJson.style.color = evt.debug_is_json ? 'var(--success)' : 'var(--danger)';
 
         if (evt.debug_raw_headers) {
           detailDebugHeaders.textContent = JSON.stringify(evt.debug_raw_headers, null, 2);
         } else {
-          detailDebugHeaders.textContent = '無資料';
+          detailDebugHeaders.textContent = 'No data';
         }
 
         if (evt.debug_raw_body) {
           detailDebugBody.textContent = evt.debug_raw_body;
         } else {
-          detailDebugBody.textContent = '無資料';
+          detailDebugBody.textContent = 'No data';
         }
       }
 
-      // 格式化展示 JSON
+      // Format JSON payload.
       detailJson.textContent = JSON.stringify(evt, null, 2);
 
-      // 切換顯示面板
+      // Toggle detail panel state.
       detailEmptyState.style.display = 'none';
       detailPanelBody.style.display = 'flex';
     }
 
-    // 注入預設模擬測試資料，方便使用者初次開啟時看到效果
+    // Inject sample data so first-time visitors can see the layout.
     function injectMockDataIfEmpty() {
       if (events.length === 0) {
         const mockEvents = [
           {
             event_id: "mock_evt_001",
-            org_name: "台北研發總部",
+            org_name: "Taipei R&D Headquarters",
             org_id: "org_tw_01",
             event_type: "VCA_PEOPLE_DETECTION",
             event_name: "People Detection",
-            device_name: "大門入口攝影機-1",
+            device_name: "Main Entrance Camera 1",
             device_id: "cam_gate_01",
             mac: "00:02:D1:4F:B2:91",
-            device_group_name: "1樓外圍",
+            device_group_name: "1F Perimeter",
             device_group_id: "group_01",
             local_time: Date.now() - 5 * 60000,
             timezone: "Asia/Taipei",
             alarm_id: "alarm_rule_101",
-            profile_name: "大門防護規則",
+            profile_name: "Main Entrance Protection",
             image_face: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150",
             image_person: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=300",
             utc_time: new Date(Date.now() - 5 * 60000).toISOString(),
@@ -1640,19 +2079,19 @@
           },
           {
             event_id: "mock_evt_002",
-            org_name: "台北研發總部",
+            org_name: "Taipei R&D Headquarters",
             org_id: "org_tw_01",
             event_type: "VCA_VEHICLE_DETECTION",
             event_name: "Vehicle Detection",
-            device_name: "地下停車場坡道-2",
+            device_name: "Basement Parking Ramp 2",
             device_id: "cam_parking_02",
             mac: "00:02:D1:4F:C1:22",
-            device_group_name: "地下室",
+            device_group_name: "Basement",
             device_group_id: "group_02",
             local_time: Date.now() - 15 * 60000,
             timezone: "Asia/Taipei",
             alarm_id: "alarm_rule_102",
-            profile_name: "車輛進出偵測",
+            profile_name: "Vehicle Access Detection",
             image_face: "",
             image_person: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=300",
             utc_time: new Date(Date.now() - 15 * 60000).toISOString(),
@@ -1660,19 +2099,19 @@
           },
           {
             event_id: "mock_evt_003",
-            org_name: "台中倉庫機房",
+            org_name: "Taichung Warehouse Server Room",
             org_id: "org_tw_02",
             event_type: "VCA_INTRUSION_DETECTION",
             event_name: "Intrusion Detection",
-            device_name: "機房通道後門-5",
+            device_name: "Server Room Rear Door 5",
             device_id: "cam_server_05",
             mac: "00:02:D1:8E:AA:F4",
-            device_group_name: "安全管制區",
+            device_group_name: "Restricted Security Area",
             device_group_id: "group_05",
             local_time: Date.now() - 45 * 60000,
             timezone: "Asia/Taipei",
             alarm_id: "alarm_rule_103",
-            profile_name: "機房入侵警報",
+            profile_name: "Server Room Intrusion Alert",
             image_face: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150",
             image_person: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=300",
             utc_time: new Date(Date.now() - 45 * 60000).toISOString(),
@@ -1685,24 +2124,26 @@
       }
     }
 
-    // 初始化 Server-Sent Events (SSE) 連接
+    // Initialize Server-Sent Events (SSE).
     function initSSE() {
       setConnectionStatus('connecting');
       
-      // 建立連線
-      const eventSource = new EventSource('/events');
+      // Create connection.
+      const tokenQuery = currentToken ? `?token=${encodeURIComponent(currentToken)}` : '';
+      const eventSource = new EventSource(`/events${tokenQuery}`);
+      activeEventSource = eventSource;
 
-      // 當建立成功連線
+      // Connection opened.
       eventSource.onopen = function() {
         setConnectionStatus('connected');
       };
 
-      // 接收歷史事件資料 (一次性載入)
+      // Load historical events once.
       eventSource.addEventListener('history', function(e) {
         try {
           const historyEvents = JSON.parse(e.data);
           
-          // 如果後台有真實事件，就使用真實事件；否則使用 Mock 事件
+          // Use real server history when available; otherwise use sample events.
           if (historyEvents && historyEvents.length > 0) {
             events = historyEvents;
             updateDashboard();
@@ -1711,44 +2152,58 @@
             injectMockDataIfEmpty();
           }
         } catch (err) {
-          console.error("解析歷史資料失敗", err);
+          console.error("Failed to parse history data", err);
           injectMockDataIfEmpty();
         }
       });
 
-      // 接收單一最新事件 (即時廣播)
+      // Receive live events.
       eventSource.addEventListener('message', function(e) {
         try {
           const newEvent = JSON.parse(e.data);
           
-          // 移除所有 Mock 事件 (如果有新真實事件進來)
+          // Remove sample events when a real event arrives.
           events = events.filter(evt => !evt.is_mock);
           
-          // 新事件加在最前端
+          // Add the newest event first.
           events.unshift(newEvent);
 
           updateDashboard();
           
-          // 自動選擇最新進來的事件
+          // Automatically select the newest event.
           selectEvent(getEventKey(newEvent));
 
         } catch (err) {
-          console.error("解析即時事件失敗", err);
+          console.error("Failed to parse live event", err);
         }
       });
 
-      // 當連線錯誤，嘗試自動重連
+      eventSource.addEventListener('clear', function() {
+        clearDashboardEvents();
+      });
+
+      // Reconnect after errors.
       eventSource.onerror = function() {
         setConnectionStatus('disconnected');
         eventSource.close();
         
-        // 5秒後嘗試重新連接
-        setTimeout(initSSE, 5000);
+        // Try again after 5 seconds.
+        if (activeEventSource === eventSource) {
+          setTimeout(initSSE, 5000);
+        }
       };
     }
 
-    // 啟動連線
-    initSSE();
+    function reconnectSSE() {
+      if (activeEventSource) {
+        activeEventSource.close();
+        activeEventSource = null;
+      }
+      initSSE();
+    }
+
+    // Start connection.
+    loadTokenSetting().then(() => initSSE());
 
   </script>
 </body>
