@@ -1,7 +1,7 @@
 # System Specification (Source of Truth)
 
 ## Purpose
-The VIVOTEK Vortex Webhook Server & Dashboard receives alarm webhooks from VORTEX Portal, stores the latest events in memory, and streams them to a real-time web dashboard. The backend is a Flask app deployed on Google Cloud Run. The frontend is a single-page dashboard rendered from `templates/index.html`.
+The VIVOTEK Vortex Webhook Server & Dashboard receives alarm webhooks from VORTEX Portal, stores the latest events in memory, and streams them to a real-time web dashboard. The backend is a Flask app deployed on Google Cloud Run. The primary frontend dashboard is rendered from `templates/index.html`. The alternate `/monitor` frontend has its own independent specification in `openspec/specs/monitor.md`.
 
 ---
 
@@ -11,7 +11,7 @@ The VIVOTEK Vortex Webhook Server & Dashboard receives alarm webhooks from VORTE
 * **GCP Project**: `webhook-479112`
 * **Region**: `asia-east1`
 * **Service**: `vortex-webhook-server`
-* **Latest deployed revision**: `vortex-webhook-server-00049-2fx`
+* **Latest deployed revision**: `vortex-webhook-server-00052-9cj`
 * **Traffic**: 100% to latest revision
 * **Service URL**: `https://vortex-webhook-server-flraxb4fsq-de.a.run.app`
 * **Alternate run.app URL used during testing**: `https://vortex-webhook-server-933678246560.asia-east1.run.app`
@@ -171,13 +171,23 @@ Lookup rules:
 
 This endpoint exists because browser rendering of large inline base64 thumbnails in the right-side detail panel was unstable and made debugging harder. The left list can still use data URLs directly.
 
-### `GET /`
+### Dashboard Page Rendering
 
-Serves the dashboard and disables HTML caching:
+Dashboard HTML pages must be rendered with caching disabled:
 
 * `Cache-Control: no-store, no-cache, must-revalidate, max-age=0`
 * `Pragma: no-cache`
 * `Expires: 0`
+
+The Flask app uses a shared helper for dashboard template rendering so all dashboard pages receive the same no-cache headers.
+
+### `GET /`
+
+Serves the primary dashboard from `templates/index.html`.
+
+### `GET /monitor`
+
+Serves the alternate monitor dashboard. The monitor route, template, frontend behavior, and future monitor-specific requirements are specified independently in `openspec/specs/monitor.md`.
 
 ---
 
@@ -215,7 +225,7 @@ Required behavior:
 * Status badges and event tags use pill styling with neutral colors unless communicating connection or warning state.
 * JSON/debug blocks use light gray surfaces and dark readable text.
 * The existing left alarm stream and right alarm detail two-column structure remains intact.
-* This style is deployed in revision `vortex-webhook-server-00049-2fx`.
+* This style is deployed in revision `vortex-webhook-server-00052-9cj`.
 
 ### Mobile Header Layout
 
@@ -270,7 +280,9 @@ Required behavior:
 * Prepends each live token-scoped `message` event.
 * Handles token-scoped `clear` events by clearing the client event list and resetting the detail panel.
 * Does not apply a client-side event count limit.
-* Automatically selects the newest real event.
+* Automatically selects the newest real event until the user manually selects an event card.
+* After the user manually selects an event card, new live events continue to appear in the alarm stream and update statistics, but must not replace the selected detail image, parsed fields, or raw payload.
+* Clearing events or changing the saved token resets the manual selection lock.
 * When the saved token changes, reconnects SSE with the new token and reloads only that token's event history.
 
 ### Alarm Stream Controls
@@ -358,8 +370,11 @@ Required CSS:
 
 * `.event-list { min-height: 0; overflow-y: auto; }`
 * `.event-item { flex: 0 0 auto; min-height: 82px; }`
-* `.event-card-inner { min-height: 50px; min-width: 0; }`
-* Long labels, timestamps, device names, and MAC fields must not collapse the card height.
+* `.event-card-inner { min-height: 50px; min-width: 0; align-items: flex-start; }`
+* Event name/type tags must occupy their own row above the timestamp.
+* Event name/type tags must allow wrapping with `white-space: normal` and `overflow-wrap: anywhere`.
+* The timestamp must occupy its own row below the event name/type tag.
+* Long labels, timestamps, device names, and MAC fields must not collapse the card height or visually cover each other.
 
 This keeps cards from compressing vertically and clipping thumbnails/text when many events are present.
 

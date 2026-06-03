@@ -327,14 +327,23 @@ def serve_thumbnail(event_id):
 
     return Response("Not found", status=404)
 
-@app.route('/', methods=['GET'])
-def index():
-    # Render dashboard page.
-    response = make_response(render_template('index.html'))
+def render_dashboard_template(template_name):
+    """Render a dashboard page with no HTML caching."""
+    response = make_response(render_template(template_name))
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
     return response
+
+@app.route('/', methods=['GET'])
+def index():
+    # Render the primary dashboard page.
+    return render_dashboard_template('index.html')
+
+@app.route('/monitor', methods=['GET'])
+def monitor():
+    # Render the alternate monitor page for independent UI iteration.
+    return render_dashboard_template('monitor.html')
 
 if __name__ == '__main__':
     # Local development entrypoint.
