@@ -11,7 +11,7 @@ The VIVOTEK Vortex Webhook Server & Dashboard receives alarm webhooks from VORTE
 * **GCP Project**: `webhook-479112`
 * **Region**: `asia-east1`
 * **Service**: `vortex-webhook-server`
-* **Latest deployed revision**: `vortex-webhook-server-00052-9cj`
+* **Latest deployed revision**: `vortex-webhook-server-00064-s2z`
 * **Traffic**: 100% to latest revision
 * **Service URL**: `https://vortex-webhook-server-flraxb4fsq-de.a.run.app`
 * **Alternate run.app URL used during testing**: `https://vortex-webhook-server-933678246560.asia-east1.run.app`
@@ -46,7 +46,8 @@ Receives VORTEX webhook events.
 
 * Reads `X-Vortex-Token`.
 * Validates the token against the set of registered `X-Vortex-Token` values.
-* The default token is `9ea784d08b87d3a3f0f44114236592218ed8beb6eb8d411f`, unless `VORTEX_TOKEN` is set in the environment.
+* There is no built-in or environment-provided default accepted token.
+* A token is accepted only after a dashboard user saves it through `POST /settings/token`.
 * Invalid tokens are rejected with HTTP `401`.
 * Rejected events are not parsed into dashboard events, not stored in event history, and not broadcast over SSE.
 * Accepted events are stored in an in-memory history partition keyed by the received `X-Vortex-Token`.
@@ -87,15 +88,21 @@ Timestamp display priority:
 
 ### `GET /settings/token`
 
-Returns the default `X-Vortex-Token` value used when a browser has no saved local token.
+Returns an empty `X-Vortex-Token` value when a browser has no saved local token.
 
 Response shape:
 
 ```json
 {
-  "x_vortex_token": "..."
+  "x_vortex_token": "",
+  "configured": false
 }
 ```
+
+Required behavior:
+
+* Does not expose or register any default token.
+* Does not mutate the runtime token registry.
 
 ### `POST /settings/token`
 
@@ -114,7 +121,7 @@ Required behavior:
 * Rejects an empty token with HTTP `400`.
 * Registers the token in process memory so `POST /webhook` can accept events with that token.
 * Does not make the token global for other dashboard clients.
-* Does not persist across Cloud Run instance restart or new revision deployment unless the same value is also configured as `VORTEX_TOKEN`.
+* Does not persist across Cloud Run instance restart or new revision deployment.
 
 ### `GET /events`
 
@@ -225,7 +232,7 @@ Required behavior:
 * Status badges and event tags use pill styling with neutral colors unless communicating connection or warning state.
 * JSON/debug blocks use light gray surfaces and dark readable text.
 * The existing left alarm stream and right alarm detail two-column structure remains intact.
-* This style is deployed in revision `vortex-webhook-server-00052-9cj`.
+* This style is deployed in revision `vortex-webhook-server-00064-s2z`.
 
 ### Mobile Header Layout
 
@@ -303,13 +310,14 @@ The dashboard header includes runtime webhook token controls.
 Required behavior:
 
 * Displays an editable `X-Vortex-Token` input.
-* Loads the saved browser token from `localStorage`; when no browser token exists, loads the default value from `GET /settings/token`.
-* Defaults to `9ea784d08b87d3a3f0f44114236592218ed8beb6eb8d411f`.
+* Loads the saved browser token from `localStorage`; when no browser token exists, the token input stays empty and prompts the user to set a token.
+* Has no default `X-Vortex-Token`.
 * Saves changes to `localStorage` and registers the token through `POST /settings/token`.
 * Shows save status next to the setting.
 * Provides a `?` help button.
 * The help dialog explains that VORTEX webhook settings must add a custom header named `X-Vortex-Token` with the saved token value.
 * After saving, this browser sees only webhook events whose `X-Vortex-Token` header equals the saved value.
+* The dashboard must not open `/events` or accept webhook events for a visitor until that visitor saves an `X-Vortex-Token`.
 * The token setting row must keep the `?` and `Save` buttons visible without text wrapping; the token input is the element that shrinks when horizontal space is tight.
 * Two dashboard clients using different tokens must not see each other's events.
 
@@ -380,7 +388,7 @@ This keeps cards from compressing vertically and clipping thumbnails/text when m
 
 ### Rejected Token Behavior
 
-Events with an `X-Vortex-Token` header that is not registered are rejected by the backend and do not appear in the dashboard. Events with a registered token appear only in dashboard clients subscribed to that same token.
+Events with an `X-Vortex-Token` header that is not registered are rejected by the backend and do not appear in the dashboard. There is no built-in default accepted token. Events with a registered token appear only in dashboard clients subscribed to that same token.
 
 ---
 
@@ -402,14 +410,20 @@ Pillow is required for thumbnail normalization.
 * Local Flask run with `.venv/bin/python main.py`
 * Local browser verification of `http://127.0.0.1:8080/`
 * `git diff --check`
-* Cloud Run deployed and verified at the live service URL.
+* Cloud Run deployed revision `vortex-webhook-server-00064-s2z` and verified it at the live service URL.
 * Live asset check for `/static/images/vortex-logo.svg` returned HTTP `200` and `Content-Type: image/svg+xml`.
 * Live browser verification confirmed the header logo loads with nonzero natural dimensions.
-* Live token settings API confirmed the default `X-Vortex-Token` value.
+* Live token settings API confirmed `X-Vortex-Token` is empty with `configured: false` for a first-time visitor.
 * Live webhook token filtering confirmed:
-  * wrong `X-Vortex-Token` returns HTTP `401`
-  * matching `X-Vortex-Token` returns HTTP `200`
+  * unregistered `X-Vortex-Token` returns HTTP `401`
+  * the same `X-Vortex-Token` returns HTTP `200` only after being registered through `POST /settings/token`
+* Live `/events` verification confirmed missing `X-Vortex-Token` returns HTTP `400`.
+* Cloud Run service settings verified `VORTEX_TOKEN` was removed from the deployed environment.
 * Live browser verification confirmed the token input, save button, and `?` help button are present.
+* Local `/settings/token` verification confirmed it returns an empty token with `configured: false`.
+* Local `/events` verification confirmed missing `X-Vortex-Token` returns HTTP `400`.
+* Local webhook verification confirmed an unregistered token returns HTTP `401`, and the same token is accepted only after `POST /settings/token` registers it.
+* Local `/` browser verification confirmed a first-time visitor sees an empty token input, `Disconnected` status, and `Set token to start`.
 * Live SSE confirmed to return `: connected` and history/message events.
 * Live dashboard verified:
   * status shows `Live`
