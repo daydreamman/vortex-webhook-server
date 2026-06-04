@@ -1270,6 +1270,109 @@
       color: #0f766e;
     }
 
+    .deepsearch-open-button {
+      width: auto;
+      min-width: 8.6rem;
+      padding: 0 0.85rem;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    .deepsearch-dialog {
+      width: min(94vw, 760px);
+      max-height: 88vh;
+      overflow: auto;
+    }
+
+    .deepsearch-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .deepsearch-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+
+    .deepsearch-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .deepsearch-field label {
+      color: #525252;
+      font-size: 0.78rem;
+      font-weight: 750;
+    }
+
+    .deepsearch-field input {
+      border: 1px solid #dcdcdc;
+      border-radius: 12px;
+      background: #f7f7f7;
+      color: #171717;
+      padding: 0.65rem 0.75rem;
+      font-size: 0.88rem;
+      min-width: 0;
+    }
+
+    .deepsearch-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    #deepsearch-verify-button {
+      width: auto;
+      min-width: 9.5rem;
+      padding: 0 0.9rem;
+    }
+
+    .deepsearch-status {
+      color: #737373;
+      font-size: 0.82rem;
+      font-weight: 650;
+    }
+
+    .vortexai-session-indicator {
+      display: none;
+      align-items: center;
+      gap: 0.4rem;
+      border: 1px solid #bbf7d0;
+      background: #f0fdf4;
+      color: #166534;
+      border-radius: 999px;
+      padding: 0.42rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .vortexai-session-indicator.is-active {
+      display: inline-flex;
+    }
+
+    .deepsearch-result {
+      margin-top: 1rem;
+      min-height: 8rem;
+      max-height: 22rem;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid #e5e5e5;
+      border-radius: 14px;
+      background: #f8fafc;
+      color: #334155;
+      padding: 0.85rem;
+      font-family: monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
     @media (max-width: 980px) {
       .header-status-section {
         flex-wrap: wrap;
@@ -1292,6 +1395,10 @@
       .token-settings input {
         flex: 1;
         width: auto;
+      }
+
+      .deepsearch-form {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -1331,6 +1438,321 @@
         min-width: 3rem;
         padding: 0 0.6rem;
       }
+
+      .deepsearch-open-button {
+        width: 100%;
+      }
+    }
+
+    /* Monitor gallery layout */
+    .dashboard-container {
+      max-width: 1760px;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1rem;
+    }
+
+    .dashboard-container .card-panel {
+      max-height: none;
+      overflow: visible;
+    }
+
+    .detail-panel-card {
+      display: none !important;
+    }
+
+    .event-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem 1rem;
+      overflow: visible;
+      padding-right: 0;
+    }
+
+    .event-date-heading {
+      grid-column: 1 / -1;
+      margin-top: 0.25rem;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #111111;
+    }
+
+    .event-item {
+      background: transparent;
+      border: 0;
+      border-radius: 10px;
+      box-shadow: none;
+      padding: 0;
+      min-height: 0;
+      gap: 0;
+      overflow: visible;
+      cursor: zoom-in;
+      animation: none !important;
+    }
+
+    .event-item::before,
+    .event-item.active::before,
+    .event-item:hover::before {
+      display: none;
+    }
+
+    .event-item:hover,
+    .event-item.active {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .event-result-card {
+      display: grid;
+      grid-template-rows: auto auto auto;
+      min-width: 0;
+    }
+
+    .event-result-header {
+      min-height: 1.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.32rem 0.55rem;
+      background: #e7f0f7;
+      border-radius: 8px 8px 0 0;
+      color: #1f2937;
+      font-size: 0.8rem;
+      font-weight: 700;
+      min-width: 0;
+    }
+
+    .event-result-camera,
+    .event-result-type {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .event-result-type {
+      color: #f59e0b;
+      font-weight: 600;
+    }
+
+    .event-result-chevron {
+      color: #525252;
+      flex: 0 0 auto;
+    }
+
+    .event-result-media {
+      display: grid;
+      grid-template-columns: minmax(0, 0.3fr) minmax(0, 1fr);
+      background: #111111;
+      aspect-ratio: 16 / 7.8;
+      overflow: hidden;
+      border-radius: 0 0 7px 7px;
+      border: 1px solid #d6f7f3;
+      border-top: 0;
+      position: relative;
+    }
+
+    .event-result-media.single {
+      grid-template-columns: 1fr;
+    }
+
+    .event-result-crop,
+    .event-result-main {
+      min-width: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background: #111111;
+    }
+
+    .event-result-crop {
+      border-right: 2px solid #77efe6;
+    }
+
+    .event-result-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 10rem;
+      background: #f1f5f9;
+      color: #737373;
+      font-weight: 700;
+    }
+
+    .event-result-meta {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 0.55rem;
+      align-items: start;
+      padding-top: 0.45rem;
+    }
+
+    .event-result-time {
+      font-size: 1.45rem;
+      line-height: 1;
+      font-weight: 400;
+      color: #404040;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .event-result-details {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.08rem;
+      color: #262626;
+      font-size: 0.78rem;
+      font-weight: 650;
+    }
+
+    .event-result-device {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .event-result-video-icon {
+      width: 0.88rem;
+      height: 0.88rem;
+      color: #111111;
+      flex: 0 0 auto;
+    }
+
+    .event-result-date {
+      color: #525252;
+      font-weight: 500;
+    }
+
+    .event-result-more {
+      justify-self: end;
+      border: 0;
+      background: transparent;
+      color: #111111;
+      font-size: 1.1rem;
+      line-height: 1;
+      padding: 0.1rem 0;
+    }
+
+    .event-result-actions {
+      justify-self: end;
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .event-result-records {
+      border: 1px solid #d4d4d4;
+      background: #ffffff;
+      color: #404040;
+      border-radius: 999px;
+      padding: 0.2rem 0.55rem;
+      font-size: 0.72rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .event-result-records:hover {
+      background: #f5f5f5;
+      border-color: #a3a3a3;
+    }
+
+    .event-result-record-status {
+      grid-column: 1 / -1;
+      min-height: 1rem;
+      color: #737373;
+      font-size: 0.72rem;
+      line-height: 1rem;
+    }
+
+    .trajectory-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .trajectory-overlay polyline {
+      fill: none;
+      stroke: #67e8f9;
+      stroke-width: 115;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 80px rgba(6, 182, 212, 0.85));
+    }
+
+    .trajectory-overlay circle {
+      fill: #67e8f9;
+      stroke: rgba(255, 255, 255, 0.9);
+      stroke-width: 80;
+    }
+
+    .event-card-inner,
+    .event-inline-detail,
+    .event-card-thumb,
+    .event-card-content,
+    .event-header,
+    .event-body,
+    .mock-badge {
+      all: unset;
+    }
+
+    @media (max-width: 900px) {
+      .event-list {
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      }
+
+      .event-result-media {
+        aspect-ratio: 16 / 8.4;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .event-list {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .dashboard-container {
+        padding: 0 0.8rem;
+      }
+
+      .card-panel {
+        padding: 1rem;
+      }
+
+      .event-list {
+        gap: 1.35rem;
+      }
+
+      .event-result-header {
+        justify-content: flex-start;
+        font-size: 0.78rem;
+      }
+
+      .event-result-media {
+        aspect-ratio: 16 / 9.2;
+      }
+
+      .event-result-meta {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.45rem 0.75rem;
+      }
+
+      .event-result-time {
+        grid-column: 1 / -1;
+        font-size: 1.45rem;
+      }
     }
   </style>
 </head>
@@ -1363,6 +1785,14 @@
         <button id="token-save-button" class="icon-button" type="button" title="Save token">Save</button>
         <span id="token-save-status" class="token-status"></span>
       </div>
+      <button id="deepsearch-open-button" class="icon-button deepsearch-open-button" type="button" title="Log in to VortexAI">
+        <i data-lucide="database-zap" style="width: 1rem; height: 1rem;"></i>
+        <span>VortexAI Login</span>
+      </button>
+      <div id="vortexai-session-indicator" class="vortexai-session-indicator" aria-live="polite">
+        <i data-lucide="check-circle" style="width: 0.95rem; height: 0.95rem;"></i>
+        <span id="vortexai-session-text">VortexAI not logged in</span>
+      </div>
       <div id="status-badge" class="status-badge disconnected">
         <div class="status-dot"></div>
         <span id="status-text">Disconnected</span>
@@ -1383,6 +1813,34 @@
         <li>Set the header value to the token saved in this dashboard.</li>
         <li>After saving, this server accepts only events whose <code>X-Vortex-Token</code> header matches the current token.</li>
       </ol>
+    </div>
+  </div>
+
+  <div id="deepsearch-modal" class="help-modal" role="dialog" aria-modal="true" aria-labelledby="deepsearch-title">
+    <div class="help-dialog deepsearch-dialog">
+      <div class="help-dialog-header">
+        <h2 id="deepsearch-title">VortexAI Login</h2>
+        <button id="deepsearch-close" class="icon-button" type="button" title="Close" aria-label="Close">×</button>
+      </div>
+      <div class="deepsearch-form">
+        <div class="deepsearch-field full">
+          <label for="deepsearch-base-url">VortexAI base URL</label>
+          <input id="deepsearch-base-url" type="url" value="https://vortexai.vortexcloud.com/" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="deepsearch-field">
+          <label for="deepsearch-username">Username</label>
+          <input id="deepsearch-username" type="email" autocomplete="username" placeholder="name@example.com">
+        </div>
+        <div class="deepsearch-field">
+          <label for="deepsearch-password">Password</label>
+          <input id="deepsearch-password" type="password" autocomplete="current-password">
+        </div>
+      </div>
+      <div class="deepsearch-actions">
+        <button id="deepsearch-verify-button" class="icon-button" type="button" title="Log in and keep token">Login</button>
+        <span id="deepsearch-status" class="deepsearch-status">Credentials are sent only to this Flask backend to obtain a JWT token.</span>
+      </div>
+      <pre id="deepsearch-result" class="deepsearch-result">Not logged in.</pre>
     </div>
   </div>
 
@@ -1596,11 +2054,15 @@
 
     // Global state.
     const TOKEN_STORAGE_KEY = 'vortex_dashboard_x_vortex_token';
+    const VORTEXAI_SESSION_STORAGE_KEY = 'vortex_monitor_vortexai_session_id';
+    const VORTEXAI_USERNAME_STORAGE_KEY = 'vortex_monitor_vortexai_username';
+    const VORTEXAI_BASE_URL_STORAGE_KEY = 'vortex_monitor_vortexai_base_url';
     let events = [];
     let selectedEventId = null;
     let userPinnedEventSelection = false;
     let cameraSet = new Set();
     let currentToken = '';
+    let vortexAiSessionId = localStorage.getItem(VORTEXAI_SESSION_STORAGE_KEY) || '';
     let activeEventSource = null;
 
     // DOM element references.
@@ -1615,6 +2077,17 @@
     const tokenHelpButton = document.getElementById('token-help-button');
     const tokenHelpModal = document.getElementById('token-help-modal');
     const tokenHelpClose = document.getElementById('token-help-close');
+    const deepsearchOpenButton = document.getElementById('deepsearch-open-button');
+    const deepsearchModal = document.getElementById('deepsearch-modal');
+    const deepsearchClose = document.getElementById('deepsearch-close');
+    const deepsearchBaseUrl = document.getElementById('deepsearch-base-url');
+    const deepsearchUsername = document.getElementById('deepsearch-username');
+    const deepsearchPassword = document.getElementById('deepsearch-password');
+    const deepsearchVerifyButton = document.getElementById('deepsearch-verify-button');
+    const deepsearchStatus = document.getElementById('deepsearch-status');
+    const deepsearchResult = document.getElementById('deepsearch-result');
+    const vortexAiSessionIndicator = document.getElementById('vortexai-session-indicator');
+    const vortexAiSessionText = document.getElementById('vortexai-session-text');
     const eventListContainer = document.getElementById('event-list');
     const emptyState = document.getElementById('empty-state');
     const eventCountBadge = document.getElementById('event-count-badge');
@@ -1671,6 +2144,230 @@
       } catch (e) {
         return isoString;
       }
+    }
+
+    function parseDateTimeParts(value) {
+      if (!value) return null;
+      const match = String(value).match(
+        /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/
+      );
+      if (!match) return null;
+      return {
+        year: Number(match[1]),
+        month: Number(match[2]),
+        day: Number(match[3]),
+        hour: Number(match[4] || 0),
+        minute: Number(match[5] || 0),
+        second: Number(match[6] || 0)
+      };
+    }
+
+    function parseTimezoneOffsetMinutes(timezoneValue) {
+      const value = String(timezoneValue || '').trim();
+      const match = value.match(/^(?:GMT|UTC)?\s*([+-])\s*(\d{1,2})(?::?(\d{2}))?$/i);
+      if (!match) return null;
+      const sign = match[1] === '-' ? -1 : 1;
+      return sign * (Number(match[2]) * 60 + Number(match[3] || 0));
+    }
+
+    function getTimeZoneOffsetMinutes(date, timeZone) {
+      try {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hourCycle: 'h23'
+        }).formatToParts(date);
+        const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+        const zonedAsUtc = Date.UTC(
+          Number(values.year),
+          Number(values.month) - 1,
+          Number(values.day),
+          Number(values.hour),
+          Number(values.minute),
+          Number(values.second)
+        );
+        return (zonedAsUtc - date.getTime()) / 60000;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function zonedLocalPartsToDate(parts, timeZone) {
+      if (!parts) return null;
+
+      const explicitOffset = parseTimezoneOffsetMinutes(timeZone);
+      if (explicitOffset !== null) {
+        return new Date(Date.UTC(
+          parts.year,
+          parts.month - 1,
+          parts.day,
+          parts.hour,
+          parts.minute,
+          parts.second
+        ) - explicitOffset * 60000);
+      }
+
+      const initialUtc = new Date(Date.UTC(
+        parts.year,
+        parts.month - 1,
+        parts.day,
+        parts.hour,
+        parts.minute,
+        parts.second
+      ));
+      const firstOffset = getTimeZoneOffsetMinutes(initialUtc, timeZone);
+      if (firstOffset === null) return null;
+
+      const candidate = new Date(initialUtc.getTime() - firstOffset * 60000);
+      const secondOffset = getTimeZoneOffsetMinutes(candidate, timeZone);
+      if (secondOffset === null || secondOffset === firstOffset) return candidate;
+      return new Date(initialUtc.getTime() - secondOffset * 60000);
+    }
+
+    function getEventClientDate(evt) {
+      const timezone = evt?.timezone || '';
+
+      const localIsoParts = parseDateTimeParts(evt?.local_iso_time);
+      const fromLocalIso = localIsoParts ? zonedLocalPartsToDate(localIsoParts, timezone) : null;
+      if (fromLocalIso && !Number.isNaN(fromLocalIso.getTime())) return fromLocalIso;
+
+      const localTime = Number(evt?.local_time);
+      if (Number.isFinite(localTime) && localTime > 0) {
+        const localDate = new Date(localTime > 1e11 ? localTime : localTime * 1000);
+        const parts = {
+          year: localDate.getUTCFullYear(),
+          month: localDate.getUTCMonth() + 1,
+          day: localDate.getUTCDate(),
+          hour: localDate.getUTCHours(),
+          minute: localDate.getUTCMinutes(),
+          second: localDate.getUTCSeconds()
+        };
+        const fromLocalTime = zonedLocalPartsToDate(parts, timezone);
+        if (fromLocalTime && !Number.isNaN(fromLocalTime.getTime())) return fromLocalTime;
+      }
+
+      const utcDate = new Date(evt?.utc_time || '');
+      if (!Number.isNaN(utcDate.getTime())) return utcDate;
+      return null;
+    }
+
+    function formatEventTime(evt) {
+      const d = getEventClientDate(evt);
+      if (!d) return 'Unknown';
+      try {
+        return d.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
+      } catch (e) {
+        return 'Unknown';
+      }
+    }
+
+    function formatEventDate(evt) {
+      const d = getEventClientDate(evt);
+      if (!d) return 'Unknown date';
+      try {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}/${month}/${day}`;
+      } catch (e) {
+        return 'Unknown date';
+      }
+    }
+
+    function getEventUtcISOString(evt) {
+      const d = getEventClientDate(evt);
+      return d ? d.toISOString() : '';
+    }
+
+    function getEventSortTime(evt) {
+      const clientDate = getEventClientDate(evt);
+      return clientDate ? clientDate.getTime() : 0;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[char]));
+    }
+
+    function videoIconSvg() {
+      return '<svg class="event-result-video-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 13 5.2 3.1a.5.5 0 0 0 .8-.4V8.3a.5.5 0 0 0-.8-.4L16 11"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>';
+    }
+
+    function sanitizeSvgPoints(points) {
+      return (points || [])
+        .map(point => ({
+          x: Math.max(0, Math.min(9999, Number(point.x))),
+          y: Math.max(0, Math.min(9999, Number(point.y)))
+        }))
+        .filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
+    }
+
+    function renderTrajectoryOverlay(mediaEl, points) {
+      if (!mediaEl) return;
+      mediaEl.querySelectorAll('.trajectory-overlay').forEach(el => el.remove());
+      const safePoints = sanitizeSvgPoints(points);
+      if (safePoints.length < 2) return;
+
+      const pointString = safePoints.map(point => `${point.x},${point.y}`).join(' ');
+      const firstPoint = safePoints[0];
+      const lastPoint = safePoints[safePoints.length - 1];
+      const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      overlay.setAttribute('class', 'trajectory-overlay');
+      overlay.setAttribute('viewBox', '0 0 10000 10000');
+      overlay.setAttribute('preserveAspectRatio', 'none');
+
+      const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      polyline.setAttribute('points', pointString);
+      overlay.appendChild(polyline);
+
+      [firstPoint, lastPoint].forEach(point => {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', point.x);
+        circle.setAttribute('cy', point.y);
+        circle.setAttribute('r', '210');
+        overlay.appendChild(circle);
+      });
+
+      mediaEl.appendChild(overlay);
+    }
+
+    function getEventCardView(evt) {
+      const mainSrc = getImageSource(evt.thumbnail) || getImageSource(evt.image_person) || getImageSource(evt.image_face);
+      const cropSrc = getImageSource(evt.image_face) || getImageSource(evt.image_person);
+      const hasSplitMedia = Boolean(mainSrc && cropSrc && cropSrc !== mainSrc);
+      const headerName = evt.profile_name || evt.event_name || 'Vortex event';
+      const headerType = evt.event_type || evt.event_name || 'Alarm';
+      const deviceName = evt.device_name || 'Unknown camera';
+      const imageAlt = `${headerName} ${headerType}`;
+
+      return {
+        mainSrc,
+        cropSrc,
+        hasSplitMedia,
+        mediaClass: hasSplitMedia ? 'event-result-media' : 'event-result-media single',
+        mediaSignature: `${mainSrc ? 'main' : 'none'}|${cropSrc || ''}|${hasSplitMedia ? 'split' : 'single'}`,
+        headerName,
+        headerType,
+        dateLabel: formatEventDate(evt),
+        timeLabel: formatEventTime(evt),
+        deviceName,
+        imageAlt
+      };
     }
 
     // Update connection status UI.
@@ -1742,7 +2439,7 @@
         const data = await res.json();
         currentToken = data.x_vortex_token || '';
         tokenInput.value = currentToken;
-        setTokenStatus('');
+        setTokenStatus(currentToken ? '' : 'Set token to start');
         return currentToken;
       } catch (err) {
         console.error('Failed to load X-Vortex-Token setting', err);
@@ -1799,6 +2496,109 @@
       tokenHelpModal.classList.remove('is-open');
     }
 
+    function openDeepsearchModal() {
+      deepsearchModal.classList.add('is-open');
+      deepsearchUsername.focus();
+    }
+
+    function closeDeepsearchModal() {
+      deepsearchModal.classList.remove('is-open');
+    }
+
+    function setDeepsearchStatus(message, tone = 'neutral') {
+      deepsearchStatus.textContent = message;
+      if (tone === 'success') {
+        deepsearchStatus.style.color = 'var(--success)';
+      } else if (tone === 'error') {
+        deepsearchStatus.style.color = 'var(--danger)';
+      } else {
+        deepsearchStatus.style.color = '#737373';
+      }
+    }
+
+    function updateVortexAIButtonState(username = '') {
+      if (vortexAiSessionId) {
+        deepsearchOpenButton.title = 'VortexAI token is available for future API calls';
+        deepsearchOpenButton.querySelector('span').textContent = username ? `VortexAI: ${username}` : 'VortexAI Logged in';
+        vortexAiSessionText.textContent = username ? `Logged in as ${username}` : 'VortexAI logged in';
+        vortexAiSessionIndicator.classList.add('is-active');
+        return;
+      }
+      deepsearchOpenButton.title = 'Log in to VortexAI';
+      deepsearchOpenButton.querySelector('span').textContent = 'VortexAI Login';
+      vortexAiSessionText.textContent = 'VortexAI not logged in';
+      vortexAiSessionIndicator.classList.remove('is-active');
+    }
+
+    function loadVortexAISessionState() {
+      const savedBaseUrl = localStorage.getItem(VORTEXAI_BASE_URL_STORAGE_KEY);
+      const savedUsername = localStorage.getItem(VORTEXAI_USERNAME_STORAGE_KEY);
+      if (savedBaseUrl) deepsearchBaseUrl.value = savedBaseUrl;
+      if (savedUsername) deepsearchUsername.value = savedUsername;
+      updateVortexAIButtonState(savedUsername || '');
+    }
+
+    async function loginVortexAI() {
+      const username = deepsearchUsername.value.trim();
+      const password = deepsearchPassword.value;
+
+      if (!username || !password) {
+        setDeepsearchStatus('Username and password are required.', 'error');
+        return;
+      }
+
+      deepsearchVerifyButton.disabled = true;
+      setDeepsearchStatus('Logging in...');
+      deepsearchResult.textContent = 'Calling VortexAI POST /login...';
+      try {
+        const res = await fetch('/monitor/vortexai/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            base_url: deepsearchBaseUrl.value.trim(),
+            username,
+            password
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          deepsearchResult.textContent = JSON.stringify({
+            status: data.status || 'error',
+            login: data.login,
+            message: data.message || `HTTP ${res.status}`,
+            detail: data.detail
+          }, null, 2);
+          throw new Error(data.message || `HTTP ${res.status}`);
+        }
+        vortexAiSessionId = data.vortexai_session_id || '';
+        localStorage.setItem(VORTEXAI_SESSION_STORAGE_KEY, vortexAiSessionId);
+        localStorage.setItem(VORTEXAI_USERNAME_STORAGE_KEY, data.username || username);
+        localStorage.setItem(VORTEXAI_BASE_URL_STORAGE_KEY, data.base_url || deepsearchBaseUrl.value.trim());
+        deepsearchPassword.value = '';
+        setDeepsearchStatus('Login succeeded.', 'success');
+        deepsearchResult.textContent = JSON.stringify({
+          status: data.status,
+          login: data.login,
+          base_url: data.base_url,
+          username: data.username,
+          vortexai_session_id: data.vortexai_session_id ? 'stored' : ''
+        }, null, 2);
+        updateVortexAIButtonState(data.username || username);
+        window.setTimeout(closeDeepsearchModal, 650);
+      } catch (err) {
+        console.error('VortexAI login failed', err);
+        setDeepsearchStatus('Login failed. Please check the username and password.', 'error');
+        if (!deepsearchResult.textContent || deepsearchResult.textContent.includes('POST /login')) {
+          deepsearchResult.textContent = JSON.stringify({
+            status: 'error',
+            message: 'The VortexAI username or password is incorrect.'
+          }, null, 2);
+        }
+      } finally {
+        deepsearchVerifyButton.disabled = false;
+      }
+    }
+
     tokenSaveButton.addEventListener('click', saveTokenSetting);
     tokenInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') saveTokenSetting();
@@ -1808,8 +2608,20 @@
     tokenHelpModal.addEventListener('click', (event) => {
       if (event.target === tokenHelpModal) closeTokenHelp();
     });
+    deepsearchOpenButton.addEventListener('click', openDeepsearchModal);
+    deepsearchClose.addEventListener('click', closeDeepsearchModal);
+    deepsearchModal.addEventListener('click', (event) => {
+      if (event.target === deepsearchModal) closeDeepsearchModal();
+    });
+    deepsearchVerifyButton.addEventListener('click', loginVortexAI);
+    deepsearchPassword.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') loginVortexAI();
+    });
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') closeTokenHelp();
+      if (event.key === 'Escape') {
+        closeTokenHelp();
+        closeDeepsearchModal();
+      }
     });
     webhookCopyButton.addEventListener('click', copyWebhookUrl);
 
@@ -1826,7 +2638,39 @@
       detailImageThumbBox.replaceChildren();
     }
 
+    function mergeEventsByKey(incomingEvents) {
+      const merged = new Map(events.map(evt => [getEventKey(evt), evt]));
+      incomingEvents.forEach((evt) => {
+        const eventKey = getEventKey(evt);
+        if (!eventKey) return;
+        const existing = merged.get(eventKey) || {};
+        merged.set(eventKey, { ...existing, ...evt });
+      });
+      events = Array.from(merged.values());
+    }
+
+    function upsertLiveEvent(newEvent) {
+      const newEventKey = getEventKey(newEvent);
+      events = events.filter(evt => !evt.is_mock);
+
+      if (!newEventKey) {
+        events.push(newEvent);
+        return;
+      }
+
+      const existingIndex = events.findIndex(evt => getEventKey(evt) === newEventKey);
+      if (existingIndex >= 0) {
+        events[existingIndex] = { ...events[existingIndex], ...newEvent };
+      } else {
+        events.push(newEvent);
+      }
+    }
+
     async function clearEvents() {
+      if (!currentToken) {
+        setTokenStatus('Set token first', 'error');
+        return;
+      }
       clearEventsButton.disabled = true;
       try {
         const res = await fetch('/events/clear', {
@@ -1918,44 +2762,181 @@
     function createEventItemElement(evt) {
       const eventKey = getEventKey(evt);
       const div = document.createElement('div');
-      div.className = `event-item ${selectedEventId === eventKey ? 'active' : ''}`;
+      div.className = 'event-item';
       div.setAttribute('id', `evt-item-${eventKey}`);
-      div.onclick = () => selectEvent(eventKey, { manual: true });
+      div.setAttribute('role', 'button');
+      div.setAttribute('tabindex', '0');
 
-      const tagClass = getTagClass(evt.event_name);
-      const isMock = evt.is_mock ? '<span class="mock-badge">Sample</span>' : '';
       const isUnauth = (evt.debug_token_valid === false) ? 'border-color: var(--danger); background: rgba(248, 113, 113, 0.05);' : '';
-
       div.style = isUnauth;
 
-      // Render Base64 thumbnail.
-      let thumbImgHtml = '';
-      const src = getImageSource(evt.thumbnail);
-      if (src) {
-        thumbImgHtml = `<img class="event-card-thumb" src="${src}" alt="Thumb" />`;
+      const view = getEventCardView(evt);
+
+      const cropHtml = view.hasSplitMedia
+        ? `<img class="event-result-crop" src="${view.cropSrc}" alt="${escapeHtml(view.imageAlt)} crop" loading="lazy">`
+        : '';
+      const mainHtml = view.mainSrc
+        ? `<img class="event-result-main" src="${view.mainSrc}" alt="${escapeHtml(view.imageAlt)}" loading="lazy">`
+        : '<div class="event-result-placeholder">No image</div>';
+
+      div.dataset.previewSrc = view.mainSrc;
+      div.dataset.previewAlt = view.imageAlt;
+      div.dataset.mediaSignature = view.mediaSignature;
+      div.innerHTML = `
+        <article class="event-result-card">
+          <div class="event-result-header">
+            <span class="event-result-camera" title="${escapeHtml(view.headerName)}">${escapeHtml(view.headerName)}</span>
+            <span class="event-result-chevron">›</span>
+            <span class="event-result-type" title="${escapeHtml(view.headerType)}">${escapeHtml(view.headerType)}</span>
+          </div>
+          <div class="${view.mediaClass}">
+            ${cropHtml}
+            ${mainHtml}
+          </div>
+          <div class="event-result-meta">
+            <div class="event-result-time">${escapeHtml(view.timeLabel)}</div>
+            <div class="event-result-details">
+              <div class="event-result-device" title="${escapeHtml(view.deviceName)}">
+                ${videoIconSvg()}
+                <span>${escapeHtml(view.deviceName)}</span>
+              </div>
+              <div class="event-result-date">${escapeHtml(view.dateLabel)}</div>
+            </div>
+            <div class="event-result-actions">
+              <button class="event-result-records" type="button" title="Fetch object records">Objects</button>
+              <button class="event-result-more" type="button" title="More" aria-label="More">...</button>
+            </div>
+            <div class="event-result-record-status"></div>
+          </div>
+        </article>
+      `;
+
+      div.addEventListener('click', () => {
+        if (div.dataset.previewSrc) openImagePreview(div.dataset.previewSrc, div.dataset.previewAlt);
+      });
+      div.addEventListener('keydown', (event) => {
+        if ((event.key === 'Enter' || event.key === ' ') && div.dataset.previewSrc) {
+          event.preventDefault();
+          openImagePreview(div.dataset.previewSrc, div.dataset.previewAlt);
+        }
+      });
+      const moreButton = div.querySelector('.event-result-more');
+      if (moreButton) {
+        moreButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          if (div.dataset.previewSrc) openImagePreview(div.dataset.previewSrc, div.dataset.previewAlt);
+        });
+      }
+      const recordsButton = div.querySelector('.event-result-records');
+      if (recordsButton) {
+        recordsButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          fetchEventObjectRecords(eventKey);
+        });
+      }
+      return div;
+    }
+
+    function updateEventItemElement(itemEl, evt) {
+      const view = getEventCardView(evt);
+      const isUnauth = (evt.debug_token_valid === false) ? 'border-color: var(--danger); background: rgba(248, 113, 113, 0.05);' : '';
+      itemEl.style = isUnauth;
+      itemEl.dataset.previewSrc = view.mainSrc;
+      itemEl.dataset.previewAlt = view.imageAlt;
+
+      if (itemEl.dataset.mediaSignature !== view.mediaSignature) {
+        const replacement = createEventItemElement(evt);
+        itemEl.replaceWith(replacement);
+        return replacement;
       }
 
-      div.innerHTML = `
-        <div class="event-card-inner">
-          ${thumbImgHtml}
-          <div class="event-card-content">
-            <div class="event-header">
-              <span class="event-name-tag ${tagClass}">${evt.event_name}</span>
-              <span class="event-time">${formatLocalTime(evt.utc_time)}</span>
-            </div>
-            <div class="event-body">
-              <span class="device-name">
-                <i data-lucide="video" style="width:0.95rem; height:0.95rem; color:var(--accent-purple);"></i>
-                ${evt.device_name}
-              </span>
-              <span class="mac-address">${evt.mac}</span>
-            </div>
-          </div>
-        </div>
-        ${isMock}
-        <div class="event-inline-detail" id="inline-detail-${eventKey}" onclick="event.stopPropagation()"></div>
-      `;
-      return div;
+      const cameraEl = itemEl.querySelector('.event-result-camera');
+      const typeEl = itemEl.querySelector('.event-result-type');
+      const timeEl = itemEl.querySelector('.event-result-time');
+      const deviceEl = itemEl.querySelector('.event-result-device');
+      const deviceTextEl = itemEl.querySelector('.event-result-device span');
+      const dateEl = itemEl.querySelector('.event-result-date');
+
+      if (cameraEl) {
+        cameraEl.textContent = view.headerName;
+        cameraEl.title = view.headerName;
+      }
+      if (typeEl) {
+        typeEl.textContent = view.headerType;
+        typeEl.title = view.headerType;
+      }
+      if (timeEl) timeEl.textContent = view.timeLabel;
+      if (deviceEl) deviceEl.title = view.deviceName;
+      if (deviceTextEl) deviceTextEl.textContent = view.deviceName;
+      if (dateEl) dateEl.textContent = view.dateLabel;
+
+      return itemEl;
+    }
+
+    function setRecordStatus(itemEl, message, tone = 'neutral') {
+      const statusEl = itemEl?.querySelector('.event-result-record-status');
+      if (!statusEl) return;
+      statusEl.textContent = message || '';
+      if (tone === 'success') {
+        statusEl.style.color = 'var(--success)';
+      } else if (tone === 'error') {
+        statusEl.style.color = 'var(--danger)';
+      } else {
+        statusEl.style.color = '#737373';
+      }
+    }
+
+    async function fetchEventObjectRecords(eventKey) {
+      const evt = events.find(item => getEventKey(item) === eventKey);
+      const itemEl = document.getElementById(`evt-item-${eventKey}`);
+      if (!evt || !itemEl) return;
+
+      if (!vortexAiSessionId) {
+        setRecordStatus(itemEl, 'Log in to VortexAI first.', 'error');
+        openDeepsearchModal();
+        return;
+      }
+
+      const utcTime = getEventUtcISOString(evt);
+      const mac = evt.mac || '';
+      if (!utcTime || !mac || mac === 'Unknown MAC' || mac === 'N/A') {
+        setRecordStatus(itemEl, 'Missing camera MAC or event time.', 'error');
+        return;
+      }
+
+      const recordsButton = itemEl.querySelector('.event-result-records');
+      if (recordsButton) recordsButton.disabled = true;
+      setRecordStatus(itemEl, `Fetching objects at ${utcTime}...`);
+      try {
+        const res = await fetch('/monitor/vortexai/getrecords', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            vortexai_session_id: vortexAiSessionId,
+            mac,
+            utc_time: utcTime,
+            window_seconds: 30
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const responseBody = data.response_body ? ` ${data.response_body}` : '';
+          throw new Error(`${data.message || data.detail || `HTTP ${res.status}`}${responseBody}`);
+        }
+
+        const trajectory = (data.trajectories || [])[0];
+        if (trajectory?.points?.length >= 2) {
+          renderTrajectoryOverlay(itemEl.querySelector('.event-result-media'), trajectory.points);
+          setRecordStatus(itemEl, `Loaded ${data.record_count} object record(s); trajectory drawn.`, 'success');
+        } else {
+          setRecordStatus(itemEl, `Loaded ${data.record_count} object record(s); no trajectory found.`, 'success');
+        }
+      } catch (err) {
+        console.error('Failed to fetch VortexAI object records', err);
+        setRecordStatus(itemEl, err.message || 'Object record fetch failed.', 'error');
+      } finally {
+        if (recordsButton) recordsButton.disabled = false;
+      }
     }
 
     // Update event list and summary metrics.
@@ -1976,12 +2957,10 @@
       // Update latest activity time.
       const nonMockEvents = events.filter(e => !e.is_mock);
       if (nonMockEvents.length > 0) {
-        statLatestTime.textContent = new Date(nonMockEvents[0].utc_time).toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false
-        });
+        const latestEvent = nonMockEvents.reduce((latest, evt) => (
+          getEventSortTime(evt) > getEventSortTime(latest) ? evt : latest
+        ), nonMockEvents[0]);
+        statLatestTime.textContent = formatEventTime(latestEvent);
       } else {
         statLatestTime.textContent = 'No activity';
       }
@@ -1993,20 +2972,39 @@
         emptyState.style.display = 'flex';
       }
 
-      // Re-render list.
-      const fragment = document.createDocumentFragment();
-      events.forEach(evt => {
-        const itemEl = createEventItemElement(evt);
-        fragment.appendChild(itemEl);
+      // Update the list without replacing every card; this prevents image reload flicker.
+      const displayEvents = [...events].sort((a, b) => getEventSortTime(a) - getEventSortTime(b));
+      const nextEventKeys = new Set(displayEvents.map(getEventKey));
+      const existingItems = new Map(
+        Array.from(eventListContainer.querySelectorAll('.event-item')).map((item) => [item.id.replace('evt-item-', ''), item])
+      );
+
+      eventListContainer.querySelectorAll('.event-date-heading').forEach(el => el.remove());
+      existingItems.forEach((item, eventKey) => {
+        if (!nextEventKeys.has(eventKey)) {
+          item.remove();
+        }
       });
 
-      // Replace current items.
+      const orderedItems = [];
+      displayEvents.forEach((evt) => {
+        const eventKey = getEventKey(evt);
+        const existingItem = existingItems.get(eventKey);
+        const itemEl = existingItem ? updateEventItemElement(existingItem, evt) : createEventItemElement(evt);
+        orderedItems.push(itemEl);
+      });
+
+      // Move only nodes that are new or out of order.
       moveDetailPanelToHome();
-      const currentItems = eventListContainer.querySelectorAll('.event-item');
-      currentItems.forEach(el => el.remove());
-      eventListContainer.appendChild(fragment);
+      let previousNode = emptyState;
+      orderedItems.forEach((itemEl) => {
+        const expectedNextNode = previousNode.nextSibling;
+        if (expectedNextNode !== itemEl) {
+          eventListContainer.insertBefore(itemEl, expectedNextNode);
+        }
+        previousNode = itemEl;
+      });
       syncDetailPlacementAfterRender();
-      lucide.createIcons();
     }
 
     // Check whether a string is a valid URL or base64 image.
@@ -2019,7 +3017,7 @@
 
     // Normalize image strings from Vortex; bare base64 receives a JPEG data URL prefix.
     function getEventKey(evt) {
-      return evt && (evt.internal_id || evt.event_id || '');
+      return evt && (evt.event_id || evt.internal_id || '');
     }
 
     function getImageSource(imgStr) {
@@ -2331,14 +3329,16 @@
         ];
         events = mockEvents;
         updateDashboard();
-        if (!isInlineDetailMode()) {
-          selectEvent(getEventKey(mockEvents[0]));
-        }
       }
     }
 
     // Initialize Server-Sent Events (SSE).
     function initSSE() {
+      if (!currentToken) {
+        setConnectionStatus('disconnected');
+        setTokenStatus('Set token to start');
+        return;
+      }
       setConnectionStatus('connecting');
       
       // Create connection.
@@ -2358,11 +3358,8 @@
           
           // Use real server history when available; otherwise use sample events.
           if (historyEvents && historyEvents.length > 0) {
-            events = historyEvents;
+            mergeEventsByKey(historyEvents);
             updateDashboard();
-            if (!isInlineDetailMode() && !userPinnedEventSelection) {
-              selectEvent(getEventKey(events[0]));
-            }
           } else {
             injectMockDataIfEmpty();
           }
@@ -2377,18 +3374,8 @@
         try {
           const newEvent = JSON.parse(e.data);
           
-          // Remove sample events when a real event arrives.
-          events = events.filter(evt => !evt.is_mock);
-          
-          // Add the newest event first.
-          events.unshift(newEvent);
-
+          upsertLiveEvent(newEvent);
           updateDashboard();
-          
-          // Automatically select the newest event until the user pins a card.
-          if (!isInlineDetailMode() && !userPinnedEventSelection) {
-            selectEvent(getEventKey(newEvent));
-          }
 
         } catch (err) {
           console.error("Failed to parse live event", err);
@@ -2416,6 +3403,10 @@
         activeEventSource.close();
         activeEventSource = null;
       }
+      if (!currentToken) {
+        setConnectionStatus('disconnected');
+        return;
+      }
       initSSE();
     }
 
@@ -2430,8 +3421,16 @@
       inlineDetailMedia.addListener(handleDetailModeChange);
     }
 
+    loadVortexAISessionState();
+
     // Start connection.
-    loadTokenSetting().then(() => initSSE());
+    loadTokenSetting().then((token) => {
+      if (token) {
+        initSSE();
+      } else {
+        setConnectionStatus('disconnected');
+      }
+    });
 
   </script>
 </body>

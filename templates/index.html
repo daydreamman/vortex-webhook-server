@@ -1742,7 +1742,7 @@
         const data = await res.json();
         currentToken = data.x_vortex_token || '';
         tokenInput.value = currentToken;
-        setTokenStatus('');
+        setTokenStatus(currentToken ? '' : 'Set token to start');
         return currentToken;
       } catch (err) {
         console.error('Failed to load X-Vortex-Token setting', err);
@@ -1827,6 +1827,10 @@
     }
 
     async function clearEvents() {
+      if (!currentToken) {
+        setTokenStatus('Set token first', 'error');
+        return;
+      }
       clearEventsButton.disabled = true;
       try {
         const res = await fetch('/events/clear', {
@@ -2339,6 +2343,11 @@
 
     // Initialize Server-Sent Events (SSE).
     function initSSE() {
+      if (!currentToken) {
+        setConnectionStatus('disconnected');
+        setTokenStatus('Set token to start');
+        return;
+      }
       setConnectionStatus('connecting');
       
       // Create connection.
@@ -2416,6 +2425,10 @@
         activeEventSource.close();
         activeEventSource = null;
       }
+      if (!currentToken) {
+        setConnectionStatus('disconnected');
+        return;
+      }
       initSSE();
     }
 
@@ -2431,7 +2444,13 @@
     }
 
     // Start connection.
-    loadTokenSetting().then(() => initSSE());
+    loadTokenSetting().then((token) => {
+      if (token) {
+        initSSE();
+      } else {
+        setConnectionStatus('disconnected');
+      }
+    });
 
   </script>
 </body>
