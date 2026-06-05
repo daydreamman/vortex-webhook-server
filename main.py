@@ -1,15 +1,40 @@
-from flask import Flask, request, jsonify, render_template, make_response, stream_with_context
-import os
+from flask import (
+    Blueprint,
+    Response,
+    current_app,
+    Flask,
+    jsonify,
+    make_response,
+    render_template,
+    request,
+    stream_with_context,
+)
 import logging
-import queue
 import json
+import queue
 import uuid
 from datetime import datetime, timezone
-from urllib.parse import urlparse
 
 import requests
+from app.services.vortexai import (
+    build_getrecords_query,
+    extract_trajectories,
+    normalize_vortexai_base_url,
+)
+from app.state import (
+    EVENT_HISTORY_BY_TOKEN,
+    KNOWN_VORTEX_TOKENS,
+    SUBSCRIBERS,
+    VORTEXAI_SESSIONS,
+    add_subscriber,
+    get_event_history,
+    get_vortexai_auth_context,
+    normalize_token,
+    register_token,
+    remove_subscriber,
+)
 
-app = Flask(__name__)
+dashboard_bp = Blueprint("dashboard", __name__)
 
 # Configure logging.
 logging.basicConfig(
@@ -20,203 +45,7 @@ logging.basicConfig(
     ]
 )
 
-DEFAULT_RUNTIME_TOKEN = ""
-KNOWN_VORTEX_TOKENS = set()
-
-# Event history is partitioned by X-Vortex-Token. New events are stored first.
-EVENT_HISTORY_BY_TOKEN = {}
-# Message queues for connected dashboard clients.
-SUBSCRIBERS = []
-VORTEXAI_SESSIONS = {}
-ALLOWED_VORTEXAI_HOSTS = {
-    "vortexai.vortexcloud.com",
-    "vortexai.dev.vortexcloud.com",
-    "vortexai.stage.vortexcloud.com",
-}
-
-def normalize_token(token):
-    return str(token or "").strip()
-
-def register_token(token):
-    clean_token = normalize_token(token)
-    if clean_token:
-        KNOWN_VORTEX_TOKENS.add(clean_token)
-    return clean_token
-
-def get_event_history(token):
-    clean_token = register_token(token)
-    return EVENT_HISTORY_BY_TOKEN.setdefault(clean_token, [])
-
-def get_vortexai_session(session_id):
-    return VORTEXAI_SESSIONS.get(str(session_id or "").strip())
-
-def get_vortexai_auth_context(session_id):
-    session = get_vortexai_session(session_id)
-    if not session:
-        return None
-    return {
-        "base_url": session["base_url"],
-        "headers": {
-            "Authorization": f"Bearer {session['jwt']}",
-            "Content-Type": "application/json",
-        },
-    }
-
-def normalize_vortexai_base_url(base_url):
-    """Return a safe VortexAI base URL with a trailing slash."""
-    raw_url = str(base_url or "https://vortexai.vortexcloud.com/").strip()
-    if not raw_url:
-        raw_url = "https://vortexai.vortexcloud.com/"
-    if "://" not in raw_url:
-        raw_url = f"https://{raw_url}"
-    parsed = urlparse(raw_url)
-    host = parsed.netloc.lower()
-    if host not in ALLOWED_VORTEXAI_HOSTS:
-        raise ValueError("Base URL must be one of the supported VortexAI hosts.")
-    return f"{parsed.scheme}://{host}/"
-
-def iter_presigned_urls(obj):
-    thumbnail_json = obj.get("thumbnail_json") or {}
-    if not isinstance(thumbnail_json, dict):
-        return
-    for thumbnails in thumbnail_json.values():
-        if not isinstance(thumbnails, list):
-            continue
-        for thumbnail in thumbnails:
-            if not isinstance(thumbnail, dict):
-                continue
-            presigned_url = thumbnail.get("presigned_url")
-            if presigned_url:
-                yield presigned_url
-
-def find_json_range(file_bytes):
-    candidate_starts = [
-        index for index, byte in enumerate(file_bytes)
-        if byte in (ord("{"), ord("["))
-    ]
-    candidate_starts.sort(key=lambda index: (index != 0, index))
-
-    for start in candidate_starts:
-        for end in range(len(file_bytes), start, -1):
-            if file_bytes[end - 1] not in (ord("}"), ord("]")):
-                continue
-            try:
-                payload = json.loads(file_bytes[start:end].decode("utf-8"))
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                continue
-            return start, end, payload
-    raise ValueError("No valid JSON payload found in downloaded file.")
-
-def iter_feature_fields(payload, path="root"):
-    if isinstance(payload, dict):
-        for key, value in payload.items():
-            next_path = f"{path}.{key}"
-            if key == "feature":
-                yield next_path, value
-            yield from iter_feature_fields(value, next_path)
-        return
-    if isinstance(payload, list):
-        for index, item in enumerate(payload):
-            yield from iter_feature_fields(item, f"{path}[{index}]")
-
-def summarize_downloaded_metadata(presigned_url, object_index, download_index):
-    parsed_url = urlparse(presigned_url)
-    safe_url = presigned_url if parsed_url.scheme else f"https://{presigned_url.lstrip('/')}"
-    response = requests.get(safe_url, timeout=30)
-    response.raise_for_status()
-    file_bytes = response.content
-    json_start, json_end, payload = find_json_range(file_bytes)
-    features = []
-    for feature_path, feature_values in iter_feature_fields(payload):
-        preview = feature_values[:5] if isinstance(feature_values, list) else feature_values
-        features.append({
-            "path": feature_path,
-            "length": len(feature_values) if isinstance(feature_values, list) else None,
-            "preview": preview,
-        })
-
-    return {
-        "object_index": object_index,
-        "download_index": download_index,
-        "file_size": len(file_bytes),
-        "json_range": [json_start, json_end],
-        "feature_count": len(features),
-        "features": features[:5],
-    }
-
-def cumulative_points_from_base_diff(base, diffs):
-    if not isinstance(base, list) or len(base) < 2 or not isinstance(diffs, list):
-        return []
-    x = float(base[0])
-    y = float(base[1])
-    points = [{"x": x, "y": y}]
-    for diff in diffs:
-        if not isinstance(diff, list) or len(diff) < 2:
-            continue
-        x += float(diff[0])
-        y += float(diff[1])
-        points.append({"x": x, "y": y})
-    return points
-
-def extract_trajectories(value, path="root"):
-    trajectories = []
-    if isinstance(value, dict):
-        if isinstance(value.get("base"), list) and isinstance(value.get("diff"), list):
-            points = cumulative_points_from_base_diff(value.get("base"), value.get("diff"))
-            if len(points) >= 2:
-                trajectories.append({"path": path, "points": points})
-
-        for key in ("trajectoryPoints", "trajectory_points"):
-            points_value = value.get(key)
-            if isinstance(points_value, list):
-                points = []
-                for point in points_value:
-                    if isinstance(point, dict) and "x" in point and "y" in point:
-                        points.append({"x": point["x"], "y": point["y"]})
-                if len(points) >= 2:
-                    trajectories.append({"path": f"{path}.{key}", "points": points})
-
-        for key, nested_value in value.items():
-            trajectories.extend(extract_trajectories(nested_value, f"{path}.{key}"))
-    elif isinstance(value, list):
-        for index, item in enumerate(value):
-            trajectories.extend(extract_trajectories(item, f"{path}[{index}]"))
-    return trajectories
-
-def build_getrecords_query(mac, utc_time, window_seconds):
-    event_time = datetime.fromisoformat(str(utc_time).replace("Z", "+00:00"))
-    if event_time.tzinfo is None:
-        event_time = event_time.replace(tzinfo=timezone.utc)
-    event_time = event_time.astimezone(timezone.utc)
-    start_time = event_time.timestamp() - window_seconds
-    end_time = event_time.timestamp() + window_seconds
-    start_iso = datetime.fromtimestamp(start_time, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    end_iso = datetime.fromtimestamp(end_time, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    return {
-        "columns": [
-            {"field": "MacAddress", "type": "string", "aggregationFunction": None},
-            {"field": "Device", "type": "string", "aggregationFunction": None},
-            {"field": "StartTime", "type": "datetime", "aggregationFunction": None},
-            {"field": "EndTime", "type": "datetime", "aggregationFunction": None},
-            {"field": "Oid", "type": "string", "aggregationFunction": None},
-            {"field": "Type", "type": "string", "aggregationFunction": None},
-        ],
-        "filters": {
-            "type": "and",
-            "filterClause": [
-                {"type": "string", "field": "MacAddress", "condition": "equal", "value": mac},
-                {"type": "datetime", "field": "StartTime", "condition": "gt", "value": start_iso},
-                {"type": "datetime", "field": "StartTime", "condition": "lte", "value": end_iso},
-            ],
-        },
-        "sorting": [
-            {"columnName": "StartTime", "ascending": False, "sortOrder": 0}
-        ],
-        "paging": {"page": 1, "nrOfRecords": 20},
-    }
-
-@app.route('/settings/token', methods=['GET', 'POST'])
+@dashboard_bp.route('/settings/token', methods=['GET', 'POST'])
 def webhook_token_setting():
     """Read the default token or register a dashboard-scoped X-Vortex-Token."""
 
@@ -238,7 +67,7 @@ def webhook_token_setting():
         "x_vortex_token": next_token
     }), 200
 
-@app.route('/monitor/vortexai/login', methods=['POST'])
+@dashboard_bp.route('/monitor/vortexai/login', methods=['POST'])
 def login_vortexai():
     """Log in to VortexAI and keep the JWT for future monitor API calls."""
     payload = request.get_json(force=True, silent=True) or {}
@@ -307,7 +136,7 @@ def login_vortexai():
             "detail": str(err),
         }), 502
 
-@app.route('/monitor/vortexai/getrecords', methods=['POST'])
+@dashboard_bp.route('/monitor/vortexai/getrecords', methods=['POST'])
 def get_vortexai_records():
     """Fetch VortexAI object records around one event's UTC time and MAC."""
     payload = request.get_json(force=True, silent=True) or {}
@@ -362,6 +191,11 @@ def get_vortexai_records():
 
         return jsonify({
             "status": "success",
+            "request_payload": {
+                "mac": mac,
+                "utc_time": utc_time,
+                "window_seconds": window_seconds,
+            },
             "query": query,
             "record_count": len(records),
             "records": records[:20],
@@ -376,6 +210,11 @@ def get_vortexai_records():
             "message": "VortexAI getrecords request failed.",
             "detail": str(err),
             "response_body": response_text,
+            "request_payload": {
+                "mac": mac,
+                "utc_time": utc_time,
+                "window_seconds": window_seconds,
+            },
             "query": query,
         }), 502
     except (ValueError, KeyError, TypeError, json.JSONDecodeError) as err:
@@ -399,8 +238,7 @@ def broadcast_event(token, event_data):
                 subscriber["queue"].put({"type": "message", "data": event_data})
         except Exception as e:
             logging.error(f"Failed to send event to subscriber: {e}")
-            if subscriber in SUBSCRIBERS:
-                SUBSCRIBERS.remove(subscriber)
+            remove_subscriber(subscriber)
 
 def broadcast_clear(token):
     """Broadcast a clear command to connected dashboard clients."""
@@ -411,10 +249,9 @@ def broadcast_clear(token):
                 subscriber["queue"].put({"type": "clear", "data": {}})
         except Exception as e:
             logging.error(f"Failed to send clear command to subscriber: {e}")
-            if subscriber in SUBSCRIBERS:
-                SUBSCRIBERS.remove(subscriber)
+            remove_subscriber(subscriber)
 
-@app.route('/webhook', methods=['POST'])
+@dashboard_bp.route('/webhook', methods=['POST'])
 def handle_vortex_webhook():
     import time
     from datetime import datetime, timezone
@@ -540,7 +377,7 @@ def handle_vortex_webhook():
 
     return jsonify({"status": "success", "message": "Vortex Webhook processed"}), 200
 
-@app.route('/events/clear', methods=['POST'])
+@dashboard_bp.route('/events/clear', methods=['POST'])
 def clear_events():
     """Clear all stored events and notify connected dashboard clients."""
     payload = request.get_json(force=True, silent=True) or {}
@@ -556,7 +393,7 @@ def clear_events():
     logging.info("Dashboard events cleared for token scope.")
     return jsonify({"status": "success", "message": "All events cleared."}), 200
 
-@app.route('/events')
+@dashboard_bp.route('/events')
 def stream_events():
     """Server-Sent Events (SSE) endpoint for real-time dashboard updates."""
     requested_token = normalize_token(request.args.get("token"))
@@ -569,9 +406,7 @@ def stream_events():
     def event_generator():
         token = register_token(requested_token)
         # Create a dedicated queue for this dashboard connection.
-        client_queue = queue.Queue()
-        subscriber = {"queue": client_queue, "token": token}
-        SUBSCRIBERS.append(subscriber)
+        subscriber, client_queue = add_subscriber(token)
 
         # Flush the stream immediately instead of waiting for the first alarm.
         yield ": connected\n\n"
@@ -594,10 +429,9 @@ def stream_events():
             # Browser tab closed or connection disconnected.
             pass
         finally:
-            if subscriber in SUBSCRIBERS:
-                SUBSCRIBERS.remove(subscriber)
+            remove_subscriber(subscriber)
                 
-    response = app.response_class(
+    response = current_app.response_class(
         stream_with_context(event_generator()),
         mimetype='text/event-stream'
     )
@@ -605,13 +439,11 @@ def stream_events():
     response.headers["X-Accel-Buffering"] = "no"
     return response
 
-@app.route('/thumbnail/<event_id>')
+@dashboard_bp.route('/thumbnail/<event_id>')
 def serve_thumbnail(event_id):
     """Decode an event thumbnail and normalize it as a browser-friendly JPEG."""
     import base64
     import io
-    from flask import Response
-
     token = normalize_token(request.args.get("token"))
     histories = [get_event_history(token)] if token else EVENT_HISTORY_BY_TOKEN.values()
 
@@ -673,15 +505,26 @@ def render_dashboard_template(template_name):
     response.headers["Expires"] = "0"
     return response
 
-@app.route('/', methods=['GET'])
+@dashboard_bp.route('/', methods=['GET'])
 def index():
     # Render the primary dashboard page.
     return render_dashboard_template('index.html')
 
-@app.route('/monitor', methods=['GET'])
+@dashboard_bp.route('/monitor', methods=['GET'])
 def monitor():
     # Render the alternate monitor page for independent UI iteration.
     return render_dashboard_template('monitor.html')
+
+
+def create_app():
+    """Create and configure the Flask application."""
+    flask_app = Flask(__name__)
+    flask_app.register_blueprint(dashboard_bp)
+    return flask_app
+
+
+app = create_app()
+
 
 if __name__ == '__main__':
     # Local development entrypoint.

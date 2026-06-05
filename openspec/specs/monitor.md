@@ -168,6 +168,9 @@ Required behavior:
 * When login fails, the UI must present a clear username/password error message.
 * The backend VortexAI proxy must restrict `base_url` to supported VortexAI hosts.
 * After VortexAI login, each event card must provide an object-record action that converts the card's trigger time to UTC, sends the UTC time and camera MAC to the backend, and calls VortexAI `POST /api/deepsearch/getrecords` with the stored JWT.
+* The object-record action must use the clicked card's own camera MAC and UTC time. It must not re-select data from the global event list by a potentially duplicated event key.
+* Pressing an event card's object-record action must show per-card debug information containing the frontend request payload, the backend VortexAI query when available, response status/body, and the clicked card dataset values.
+* The per-card object-record debug information must include a copy action that copies the complete debug JSON to the clipboard, with a fallback that selects the debug text if clipboard writing is unavailable.
 * Object-record responses containing trajectory data with `base` and `diff` must be converted to cumulative points by adding each diff to the previous coordinate.
 * Trajectory coordinates use the Vortex `0..9999` coordinate system and must be rendered onto the card image using `x * width / 10000` and `y * height / 10000` equivalent scaling.
 
@@ -201,3 +204,10 @@ Required behavior:
 * Cloud Run revision `vortex-webhook-server-00064-s2z` deployed the no-default-token runtime behavior shared by `/` and `/monitor`.
 * Live `/settings/token` on revision `vortex-webhook-server-00064-s2z` returned an empty token with `configured: false`.
 * Live `/events` on revision `vortex-webhook-server-00064-s2z` returned HTTP `400` when no `X-Vortex-Token` was supplied.
+* Local monitor object-record test verified two cards with different MAC values keep distinct per-card request payloads (`MAC_A_111` and `MAC_B_222`) and the Objects debug panel displays the clicked card's request payload.
+* Cloud Run revision `vortex-webhook-server-00065-msw` deployed the per-card object-record payload and Objects debug info changes.
+* Live `/monitor` for revision `vortex-webhook-server-00065-msw` returned HTTP `200`.
+* Live browser DOM check for revision `vortex-webhook-server-00065-msw` verified event cards include Objects buttons, per-card debug panels, and object-record request payload datasets.
+* Cloud Run revision `vortex-webhook-server-00066-xf5` deployed the per-card `Copy debug info` action.
+* Live `/monitor` for revision `vortex-webhook-server-00066-xf5` returned HTTP `200`.
+* Live browser DOM check for revision `vortex-webhook-server-00066-xf5` verified event cards include Objects buttons, per-card debug panels, object-record payload datasets, and `Copy debug info` buttons.

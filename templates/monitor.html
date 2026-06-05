@@ -1672,6 +1672,69 @@
       line-height: 1rem;
     }
 
+    .event-result-record-debug {
+      grid-column: 1 / -1;
+      display: none;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f7f7f7;
+      color: #4a4a4a;
+      font-size: 0.74rem;
+      overflow: hidden;
+    }
+
+    .event-result-record-debug.is-visible {
+      display: block;
+    }
+
+    .event-result-record-debug summary {
+      cursor: pointer;
+      padding: 0.45rem 0.55rem;
+      font-weight: 700;
+    }
+
+    .event-result-record-debug-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.45rem 0.55rem;
+      border-top: 1px solid var(--line);
+    }
+
+    .event-result-record-debug-copy {
+      border: 1px solid #d4d4d4;
+      background: #ffffff;
+      color: #404040;
+      border-radius: 999px;
+      padding: 0.18rem 0.55rem;
+      font-size: 0.72rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .event-result-record-debug-copy:hover {
+      background: #f5f5f5;
+      border-color: #a3a3a3;
+    }
+
+    .event-result-record-debug-copy-status {
+      min-width: 4rem;
+      color: #737373;
+      font-size: 0.72rem;
+      text-align: right;
+    }
+
+    .event-result-record-debug pre {
+      max-height: 180px;
+      margin: 0;
+      padding: 0.55rem;
+      overflow: auto;
+      border-top: 1px solid var(--line);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
     .trajectory-overlay {
       position: absolute;
       inset: 0;
@@ -2289,6 +2352,19 @@
       return d ? d.toISOString() : '';
     }
 
+    function getEventMac(evt) {
+      return String(evt?.mac || evt?.macAddress || evt?.mac_address || '').trim();
+    }
+
+    function buildObjectRecordRequest(evt) {
+      return {
+        vortexai_session_id: vortexAiSessionId || '',
+        mac: getEventMac(evt),
+        utc_time: getEventUtcISOString(evt),
+        window_seconds: 30
+      };
+    }
+
     function getEventSortTime(evt) {
       const clientDate = getEventClientDate(evt);
       return clientDate ? clientDate.getTime() : 0;
@@ -2782,6 +2858,7 @@
       div.dataset.previewSrc = view.mainSrc;
       div.dataset.previewAlt = view.imageAlt;
       div.dataset.mediaSignature = view.mediaSignature;
+      hydrateEventRecordDataset(div, evt);
       div.innerHTML = `
         <article class="event-result-card">
           <div class="event-result-header">
@@ -2807,6 +2884,14 @@
               <button class="event-result-more" type="button" title="More" aria-label="More">...</button>
             </div>
             <div class="event-result-record-status"></div>
+            <details class="event-result-record-debug">
+              <summary>Debug info</summary>
+              <div class="event-result-record-debug-toolbar">
+                <button class="event-result-record-debug-copy" type="button">Copy debug info</button>
+                <span class="event-result-record-debug-copy-status" aria-live="polite"></span>
+              </div>
+              <pre></pre>
+            </details>
           </div>
         </article>
       `;
@@ -2831,10 +2916,26 @@
       if (recordsButton) {
         recordsButton.addEventListener('click', (event) => {
           event.stopPropagation();
-          fetchEventObjectRecords(eventKey);
+          fetchEventObjectRecords(div);
+        });
+      }
+      const debugCopyButton = div.querySelector('.event-result-record-debug-copy');
+      if (debugCopyButton) {
+        debugCopyButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          copyRecordDebugInfo(div);
         });
       }
       return div;
+    }
+
+    function hydrateEventRecordDataset(itemEl, evt) {
+      const requestPayload = buildObjectRecordRequest(evt);
+      itemEl.dataset.eventKey = getEventKey(evt);
+      itemEl.dataset.eventMac = requestPayload.mac;
+      itemEl.dataset.eventUtcTime = requestPayload.utc_time;
+      itemEl.dataset.eventDeviceName = evt?.device_name || '';
+      itemEl.dataset.objectRecordPayload = JSON.stringify(requestPayload);
     }
 
     function updateEventItemElement(itemEl, evt) {
@@ -2843,6 +2944,7 @@
       itemEl.style = isUnauth;
       itemEl.dataset.previewSrc = view.mainSrc;
       itemEl.dataset.previewAlt = view.imageAlt;
+      hydrateEventRecordDataset(itemEl, evt);
 
       if (itemEl.dataset.mediaSignature !== view.mediaSignature) {
         const replacement = createEventItemElement(evt);
@@ -2873,6 +2975,57 @@
       return itemEl;
     }
 
+    function setRecordDebug(itemEl, debugPayload) {
+      const debugEl = itemEl?.querySelector('.event-result-record-debug');
+      const preEl = debugEl?.querySelector('pre');
+      const copyStatusEl = debugEl?.querySelector('.event-result-record-debug-copy-status');
+      if (!debugEl || !preEl) return;
+      debugEl.classList.add('is-visible');
+      debugEl.open = true;
+      preEl.textContent = JSON.stringify(debugPayload, null, 2);
+      if (copyStatusEl) copyStatusEl.textContent = '';
+    }
+
+    async function copyRecordDebugInfo(itemEl) {
+      const debugEl = itemEl?.querySelector('.event-result-record-debug');
+      const preEl = debugEl?.querySelector('pre');
+      const copyStatusEl = debugEl?.querySelector('.event-result-record-debug-copy-status');
+      const debugText = preEl?.textContent || '';
+      if (!debugText) {
+        if (copyStatusEl) copyStatusEl.textContent = 'No data';
+        return;
+      }
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(debugText);
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = debugText;
+          textarea.style.position = 'fixed';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          textarea.remove();
+        }
+        if (copyStatusEl) {
+          copyStatusEl.textContent = 'Copied';
+          window.setTimeout(() => {
+            if (copyStatusEl.textContent === 'Copied') copyStatusEl.textContent = '';
+          }, 2200);
+        }
+      } catch (err) {
+        console.error('Failed to copy object debug info', err);
+        const range = document.createRange();
+        range.selectNodeContents(preEl);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        if (copyStatusEl) copyStatusEl.textContent = 'Selected';
+      }
+    }
+
     function setRecordStatus(itemEl, message, tone = 'neutral') {
       const statusEl = itemEl?.querySelector('.event-result-record-status');
       if (!statusEl) return;
@@ -2886,43 +3039,97 @@
       }
     }
 
-    async function fetchEventObjectRecords(eventKey) {
-      const evt = events.find(item => getEventKey(item) === eventKey);
-      const itemEl = document.getElementById(`evt-item-${eventKey}`);
-      if (!evt || !itemEl) return;
+    async function fetchEventObjectRecords(itemEl) {
+      if (!itemEl) return;
+      let requestPayload = {};
+      try {
+        requestPayload = JSON.parse(itemEl.dataset.objectRecordPayload || '{}');
+      } catch (err) {
+        requestPayload = {};
+      }
 
       if (!vortexAiSessionId) {
         setRecordStatus(itemEl, 'Log in to VortexAI first.', 'error');
+        setRecordDebug(itemEl, {
+          endpoint: '/monitor/vortexai/getrecords',
+          request_payload: requestPayload,
+          error: 'Missing VortexAI session. Log in before fetching object records.'
+        });
         openDeepsearchModal();
         return;
       }
 
-      const utcTime = getEventUtcISOString(evt);
-      const mac = evt.mac || '';
+      requestPayload.vortexai_session_id = vortexAiSessionId;
+      const utcTime = requestPayload.utc_time || '';
+      const mac = requestPayload.mac || '';
       if (!utcTime || !mac || mac === 'Unknown MAC' || mac === 'N/A') {
         setRecordStatus(itemEl, 'Missing camera MAC or event time.', 'error');
+        setRecordDebug(itemEl, {
+          endpoint: '/monitor/vortexai/getrecords',
+          request_payload: requestPayload,
+          card_dataset: {
+            event_key: itemEl.dataset.eventKey || '',
+            mac: itemEl.dataset.eventMac || '',
+            utc_time: itemEl.dataset.eventUtcTime || '',
+            device_name: itemEl.dataset.eventDeviceName || ''
+          },
+          error: 'Missing camera MAC or event time.'
+        });
         return;
       }
 
       const recordsButton = itemEl.querySelector('.event-result-records');
       if (recordsButton) recordsButton.disabled = true;
       setRecordStatus(itemEl, `Fetching objects at ${utcTime}...`);
+      setRecordDebug(itemEl, {
+        endpoint: '/monitor/vortexai/getrecords',
+        request_payload: requestPayload,
+        card_dataset: {
+          event_key: itemEl.dataset.eventKey || '',
+          mac: itemEl.dataset.eventMac || '',
+          utc_time: itemEl.dataset.eventUtcTime || '',
+          device_name: itemEl.dataset.eventDeviceName || ''
+        }
+      });
       try {
         const res = await fetch('/monitor/vortexai/getrecords', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            vortexai_session_id: vortexAiSessionId,
-            mac,
-            utc_time: utcTime,
-            window_seconds: 30
-          })
+          body: JSON.stringify(requestPayload)
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           const responseBody = data.response_body ? ` ${data.response_body}` : '';
+          setRecordDebug(itemEl, {
+            endpoint: '/monitor/vortexai/getrecords',
+            request_payload: requestPayload,
+            backend_query: data.query || null,
+            response_status: res.status,
+            response_body: data.response_body || data,
+            card_dataset: {
+              event_key: itemEl.dataset.eventKey || '',
+              mac: itemEl.dataset.eventMac || '',
+              utc_time: itemEl.dataset.eventUtcTime || '',
+              device_name: itemEl.dataset.eventDeviceName || ''
+            }
+          });
           throw new Error(`${data.message || data.detail || `HTTP ${res.status}`}${responseBody}`);
         }
+
+        setRecordDebug(itemEl, {
+          endpoint: '/monitor/vortexai/getrecords',
+          request_payload: requestPayload,
+          backend_query: data.query || null,
+          response_status: res.status,
+          record_count: data.record_count,
+          trajectory_count: (data.trajectories || []).length,
+          card_dataset: {
+            event_key: itemEl.dataset.eventKey || '',
+            mac: itemEl.dataset.eventMac || '',
+            utc_time: itemEl.dataset.eventUtcTime || '',
+            device_name: itemEl.dataset.eventDeviceName || ''
+          }
+        });
 
         const trajectory = (data.trajectories || [])[0];
         if (trajectory?.points?.length >= 2) {
