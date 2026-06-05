@@ -11,7 +11,7 @@ The VIVOTEK Vortex Webhook Server & Dashboard receives alarm webhooks from VORTE
 * **GCP Project**: `webhook-479112`
 * **Region**: `asia-east1`
 * **Service**: `vortex-webhook-server`
-* **Latest deployed revision**: `vortex-webhook-server-00064-s2z`
+* **Latest deployed revision**: `vortex-webhook-server-00068-sgf`
 * **Traffic**: 100% to latest revision
 * **Service URL**: `https://vortex-webhook-server-flraxb4fsq-de.a.run.app`
 * **Alternate run.app URL used during testing**: `https://vortex-webhook-server-933678246560.asia-east1.run.app`
@@ -36,9 +36,31 @@ The threaded Gunicorn configuration is required because `/events` is a long-live
 
 The cost-control settings keep the service able to scale to zero when idle, prevent multiple instances from being created during bursts, and reduce memory allocation cost. Any future Cloud Run deploy must preserve these settings unless the operating requirement changes.
 
+Source deployments must use `.gcloudignore` to exclude local tooling, virtual environments, Git metadata, and Python bytecode caches from the uploaded source bundle.
+
 ---
 
 ## Backend Specifications
+
+### Flask Application Structure
+
+The backend uses a Flask application factory and Blueprint-based route organization.
+
+Required behavior:
+
+* `main.py` remains the WSGI entry point and exposes `app = create_app()`.
+* The application factory lives in `app/__init__.py`.
+* Dashboard and API routes are registered through `app/routes/dashboard.py`.
+* Token-scoped event history and subscriber coordination stay in process memory.
+* Shared route logic must be delegated to service modules:
+  * `app/services/events.py` for in-memory event history broadcasting and SSE subscriptions.
+  * `app/services/webhook.py` for webhook token validation and Vortex payload mapping.
+  * `app/services/thumbnails.py` for thumbnail lookup, decoding, and JPEG normalization.
+  * `app/services/vortexai.py` for VortexAI login and getrecords proxy orchestration.
+  * `app/services/vortexai_metadata.py` for VortexAI metadata download/debug helpers.
+  * `app/services/vortexai_trajectory.py` for VortexAI trajectory extraction.
+* Template and static folders continue to resolve to the repository-level `templates/` and `static/` directories.
+* This structure must preserve the public routes and response behavior documented below.
 
 ### `POST /webhook`
 
@@ -423,6 +445,11 @@ Pillow is required for thumbnail normalization.
 * Local `/settings/token` verification confirmed it returns an empty token with `configured: false`.
 * Local `/events` verification confirmed missing `X-Vortex-Token` returns HTTP `400`.
 * Local webhook verification confirmed an unregistered token returns HTTP `401`, and the same token is accepted only after `POST /settings/token` registers it.
+* Cloud Run revision `vortex-webhook-server-00067-m4x` attempted to deploy the Flask application factory, Blueprint route organization, service layer refactor, and `.gcloudignore` source packaging rules, but failed to boot because Cloud Run uses Python 3.9 and one type annotation used Python 3.10 union syntax.
+* Cloud Run revision `vortex-webhook-server-00068-sgf` deployed the Python 3.9-compatible Flask application factory, Blueprint route organization, service layer refactor, and `.gcloudignore` source packaging rules.
+* Live `/` and `/monitor` for revision `vortex-webhook-server-00068-sgf` returned HTTP `200`.
+* Live `/settings/token` for revision `vortex-webhook-server-00068-sgf` returned an empty token with `configured: false`.
+* Live `/events` for revision `vortex-webhook-server-00068-sgf` returned HTTP `400` when no `X-Vortex-Token` was supplied.
 * Local `/` browser verification confirmed a first-time visitor sees an empty token input, `Disconnected` status, and `Set token to start`.
 * Live SSE confirmed to return `: connected` and history/message events.
 * Live dashboard verified:

@@ -1,0 +1,7 @@
+#!include:.gitignore
+
+.git/
+.agents/
+skills-lock.json
+__pycache__/
+app/**/__pycache__/
